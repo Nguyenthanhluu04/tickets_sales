@@ -1,0 +1,37 @@
+{
+  "name": "nft-ticketing-frontend",
+  "version": "1.0.0",
+  "description": "Frontend application for NFT Event Ticketing Platform",
+  "type": "module",
+  "scripts": {
+    "dev": "vite",
+    "build": "vite build",
+    "preview": "vite preview",
+    "test": "vitest"
+  },
+  "dependencies": {
+    "@fortawesome/fontawesome-svg-core": "^7.1.0",
+    "@fortawesome/free-regular-svg-icons": "^7.1.0",
+    "@fortawesome/free-solid-svg-icons": "^7.1.0",
+    "@fortawesome/vue-fontawesome": "^3.1.2",
+    "@vueuse/core": "^10.7.2",
+    "axios": "^1.6.5",
+    "date-fns": "^3.0.0",
+    "ethers": "^6.10.0",
+    "naive-ui": "^2.38.0",
+    "pinia": "^2.1.7",
+    "qrcode.vue": "^3.4.1",
+    "vue": "^3.4.15",
+    "vue-router": "^4.2.5",
+    "web3modal": "^1.9.12"
+  },
+  "devDependencies": {
+    "@vitejs/plugin-vue": "^5.0.3",
+    "@vue/test-utils": "^2.4.3",
+    "autoprefixer": "^10.4.17",
+    "postcss": "^8.4.33",
+    "tailwindcss": "^3.4.1",
+    "vite": "^5.0.11",
+    "vitest": "^1.2.0"
+  }
+}

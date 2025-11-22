@@ -1,0 +1,42 @@
+{
+  "name": "nft-ticketing-contracts",
+  "version": "1.0.0",
+  "description": "Smart contracts for NFT Event Ticketing Platform",
+  "scripts": {
+    "compile": "hardhat compile",
+    "test": "hardhat test",
+    "test:coverage": "hardhat coverage",
+    "test:gas": "REPORT_GAS=true hardhat test",
+    "deploy:amoy": "hardhat run scripts/deploy.js --network amoy",
+    "deploy:mumbai": "hardhat run scripts/deploy.js --network mumbai",
+    "deploy:polygon": "hardhat run scripts/deploy.js --network polygon",
+    "verify:amoy": "hardhat run scripts/verify.js --network amoy",
+    "verify:mumbai": "hardhat run scripts/verify.js --network mumbai",
+    "setup-events": "hardhat run scripts/setup-events.js --network amoy"
+  },
+  "keywords": [
+    "nft",
+    "ticketing",
+    "blockchain",
+    "erc1155",
+    "polygon"
+  ],
+  "author": "",
+  "license": "MIT",
+  "devDependencies": {
+    "@nomicfoundation/hardhat-chai-matchers": "^2.0.0",
+    "@nomicfoundation/hardhat-ethers": "^3.0.0",
+    "@nomicfoundation/hardhat-toolbox": "^4.0.0",
+    "@nomicfoundation/hardhat-verify": "^2.0.0",
+    "@types/chai": "^4.3.11",
+    "@types/mocha": "^10.0.6",
+    "chai": "^4.3.10",
+    "hardhat": "^2.19.0"
+  },
+  "dependencies": {
+    "@openzeppelin/contracts": "^5.0.0",
+    "axios": "^1.13.2",
+    "dotenv": "^16.3.1",
+    "ethers": "^6.10.0"
+  }
+}

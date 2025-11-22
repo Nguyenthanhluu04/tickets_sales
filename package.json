@@ -1,0 +1,32 @@
+{
+  "name": "nft-ticketing-platform",
+  "version": "1.0.0",
+  "description": "NFT Event Ticketing Platform - Blockchain-based ticketing system",
+  "private": true,
+  "scripts": {
+    "install:all": "npm run install:blockchain && npm run install:backend && npm run install:frontend",
+    "install:blockchain": "cd blockchain && npm install",
+    "install:backend": "cd backend && npm install",
+    "install:frontend": "cd frontend && npm install",
+    "dev:backend": "cd backend && npm run dev",
+    "dev:frontend": "cd frontend && npm run dev",
+    "build:frontend": "cd frontend && npm run build",
+    "test:blockchain": "cd blockchain && npm test",
+    "test:backend": "cd backend && npm test",
+    "deploy:mumbai": "cd blockchain && npm run deploy:mumbai"
+  },
+  "keywords": [
+    "nft",
+    "ticketing",
+    "blockchain",
+    "polygon",
+    "web3",
+    "ethereum"
+  ],
+  "author": "",
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": ""
+  }
+}
