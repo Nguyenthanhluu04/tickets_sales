@@ -13,6 +13,7 @@ class QRCodeService {
         tokenId: ticketData.tokenId,
         eventId: ticketData.eventId,
         owner: ticketData.owner,
+        ticketIndex: ticketData.ticketIndex || 0, // Add ticket index for uniqueness
         timestamp: Date.now(),
       };
 
@@ -37,7 +38,7 @@ class QRCodeService {
         },
       });
 
-      logger.info(`QR code generated for token ${ticketData.tokenId}`);
+      logger.info(`QR code generated for token ${ticketData.tokenId} (index: ${ticketData.ticketIndex || 0})`);
 
       return {
         qrCode: qrCodeDataURL,

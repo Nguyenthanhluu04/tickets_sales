@@ -44,10 +44,14 @@ out/
 
 # Blockchain
 blockchain/cache/
-blockchain/artifacts/
+blockchain/artifacts/build-info/
 blockchain/coverage/
 blockchain/typechain/
 blockchain/typechain-types/
+
+# Keep contract ABIs (needed by frontend/backend)
+!blockchain/artifacts/contracts/**/*.json
+!blockchain/artifacts/@openzeppelin/**/*.json
 
 # Backend
 backend/coverage/
@@ -69,3 +73,9 @@ coverage/
 *.pid.lock
 .cache/
 .parcel-cache/
+
+# Temporary guide files
+*_GUIDE.md
+*_SUMMARY.md
+QUICK_FIX.md
+requirement.md

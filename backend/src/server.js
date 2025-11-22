@@ -1,4 +1,16 @@
 require('dotenv').config();
+
+// Suppress ethers.js console errors for "filter not found"
+const originalConsoleLog = console.log;
+console.log = function(...args) {
+  const message = args.join(' ');
+  if (message.includes('@TODO Error:') && 
+      message.includes('filter not found')) {
+    return; // Silently ignore
+  }
+  originalConsoleLog.apply(console, args);
+};
+
 const express = require('express');
 const cors = require('cors');
 const helmet = require('helmet');
@@ -141,9 +153,10 @@ async function startServer() {
 
     // Global error handlers
     process.on('unhandledRejection', (reason, promise) => {
-      // Ignore filter not found errors from Hardhat node
+      // Ignore filter not found errors from public RPC nodes
       if (reason?.error?.message?.includes('filter not found') ||
           reason?.message?.includes('filter not found') ||
+          reason?.shortMessage?.includes('filter not found') ||
           (reason?.code === 'UNKNOWN_ERROR' && reason?.error?.code === -32000)) {
         return;
       }
@@ -151,9 +164,11 @@ async function startServer() {
     });
 
     process.on('uncaughtException', (error) => {
-      // Ignore filter not found errors from Hardhat node
+      // Ignore filter not found errors from public RPC nodes
       if (error?.message?.includes('filter not found') ||
-          (error?.code === 'UNKNOWN_ERROR' && error?.error?.code === -32000)) {
+          error?.shortMessage?.includes('filter not found') ||
+          (error?.code === 'UNKNOWN_ERROR' && error?.error?.code === -32000) ||
+          (error?.code === 'UNKNOWN_ERROR' && error?.error?.message === 'filter not found')) {
         return;
       }
       logger.error('Uncaught Exception:', error);

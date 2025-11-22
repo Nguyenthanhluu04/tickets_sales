@@ -62,10 +62,10 @@
               <div class="event-card" @click="goToEvent(event)">
                 <div class="event-image-container">
                   <img 
-                    :src="event.imageUrl || getDefaultImage(event.category)" 
+                    :src="event.imageUrl || event.bannerImageIPFS || event.bannerImage || getDefaultImage(event.category)" 
                     :alt="event.name"
                     class="event-image"
-                    @error="handleImageError"
+                    @error="handleImageError($event, event.category)"
                   >
                   <div class="image-overlay">
                     <n-tag :type="event.isActive ? 'success' : 'default'" size="large" round strong>
@@ -75,7 +75,7 @@
                     </n-tag>
                   </div>
                   <div class="event-category-badge">
-                    <n-tag size="medium" round>{{ event.category || 'Event' }}</n-tag>
+                    <n-tag size="medium" round>{{ getCategoryLabel(event.category) }}</n-tag>
                   </div>
                 </div>
                 
@@ -197,18 +197,27 @@ const formatDate = (dateString) => {
   }
 }
 
+const getCategoryLabel = (category) => {
+  const categoryItem = EVENT_CATEGORIES.find(cat => cat.value === category)
+  return categoryItem ? categoryItem.label : 'Event'
+}
+
 const getDefaultImage = (category) => {
   const images = {
-    'Music': 'https://images.unsplash.com/photo-1459749411175-04bf5292ceea?w=800',
-    'Technology': 'https://images.unsplash.com/photo-1540575467063-178a50c2df87?w=800',
-    'Sports': 'https://images.unsplash.com/photo-1461896836934-ffe607ba8211?w=800',
-    'Art': 'https://images.unsplash.com/photo-1561214115-f2f134cc4912?w=800',
+    'music': 'https://images.unsplash.com/photo-1459749411175-04bf5292ceea?w=800',
+    'technology': 'https://images.unsplash.com/photo-1540575467063-178a50c2df87?w=800',
+    'sports': 'https://images.unsplash.com/photo-1461896836934-ffe607ba8211?w=800',
+    'conference': 'https://images.unsplash.com/photo-1540575467063-178a50c2df87?w=800',
+    'theater': 'https://images.unsplash.com/photo-1503095396549-807759245b35?w=800',
+    'festival': 'https://images.unsplash.com/photo-1533174072545-7a4b6ad7a6c3?w=800',
+    'workshop': 'https://images.unsplash.com/photo-1515187029135-18ee286d815b?w=800',
+    'art': 'https://images.unsplash.com/photo-1561214115-f2f134cc4912?w=800',
   }
   return images[category] || 'https://images.unsplash.com/photo-1492684223066-81342ee5ff30?w=800'
 }
 
-const handleImageError = (e) => {
-  e.target.src = 'https://images.unsplash.com/photo-1492684223066-81342ee5ff30?w=800'
+const handleImageError = (e, category) => {
+  e.target.src = getDefaultImage(category)
 }
 
 const goToEvent = (event) => {

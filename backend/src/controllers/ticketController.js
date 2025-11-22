@@ -41,43 +41,97 @@ exports.syncTicketPurchase = async (req, res) => {
  */
 exports.getMyTickets = async (req, res) => {
   try {
-    const { page = 1, limit = 10 } = req.query;
-    const userAddress = req.user.walletAddress;
+    const { page = 1, limit = 100 } = req.query;
+    const userAddress = req.user.walletAddress.toLowerCase();
 
-    const query = { owner: userAddress };
-    const total = await Ticket.countDocuments(query);
+    logger.info(`Fetching tickets for user: ${userAddress}`);
 
-    const tickets = await Ticket.find(query)
-      .sort({ purchasedAt: -1 })
-      .limit(limit * 1)
-      .skip((page - 1) * limit)
-      .lean();
+    // Get all events to check ticket types
+    const events = await Event.find({ isActive: true }).lean();
+    const allTickets = [];
 
-    // Get event details for each ticket
-    const ticketsWithDetails = await Promise.all(
-      tickets.map(async (ticket) => {
-        const event = await Event.findOne({ eventId: ticket.eventId }).lean();
-        
-        // Generate QR code if not exists
-        if (!ticket.qrCode) {
-          const { qrCode } = await qrCodeService.generateTicketQR({
-            tokenId: ticket.tokenId,
-            eventId: ticket.eventId,
-            owner: ticket.owner,
-          });
+    // For each event, check user's ticket balance from blockchain
+    for (const event of events) {
+      const ticketTypes = await TicketType.find({ eventId: event.eventId }).lean();
+      
+      for (const ticketType of ticketTypes) {
+        try {
+          // Get balance from blockchain
+          const balance = await blockchainService.getTicketBalance(userAddress, ticketType.tokenId);
           
-          await Ticket.updateOne({ _id: ticket._id }, { qrCode });
-          ticket.qrCode = qrCode;
+          // If user owns tickets of this type
+          if (balance > 0) {
+            // Create individual tickets for each owned ticket
+            for (let i = 0; i < balance; i++) {
+              // Find ticket record in database
+              const tickets = await Ticket.find({
+                owner: userAddress,
+                ticketTypeId: ticketType.tokenId,
+                eventId: event.eventId
+              }).lean();
+
+              const ticket = tickets[i] || null;
+
+              // Generate unique QR code for each ticket
+              let qrCode = ticket?.qrCode;
+              if (!qrCode) {
+                const qrResult = await qrCodeService.generateTicketQR({
+                  tokenId: ticketType.tokenId,
+                  eventId: event.eventId,
+                  owner: userAddress,
+                  ticketIndex: i, // Add index to make each QR unique
+                });
+                qrCode = qrResult.qrCode;
+                
+                // Save QR code to database if ticket exists
+                if (ticket) {
+                  await Ticket.updateOne({ _id: ticket._id }, { qrCode });
+                }
+              }
+
+              // Add individual ticket
+              allTickets.push({
+                _id: ticket?._id || `${ticketType.tokenId}-${i}`,
+                tokenId: ticket?.tokenId || `${ticketType.tokenId}-${userAddress}-${i}`,
+                eventId: event.eventId,
+                ticketTypeId: ticketType.tokenId,
+                owner: userAddress,
+                ticketTypeName: ticketType.name,
+                price: ticketType.price,
+                isUsed: ticket?.isUsed || false,
+                qrCode,
+                ticketNumber: i + 1, // Add ticket number for display
+                totalTickets: balance, // Total tickets of this type
+                event: {
+                  ...event,
+                  imageUrl: event.bannerImageIPFS || event.bannerImage || null,
+                },
+                ticketType,
+              });
+            }
+          }
+        } catch (error) {
+          logger.error(`Error checking balance for ticket type ${ticketType.tokenId}:`, error);
         }
+      }
+    }
 
-        return {
-          ...ticket,
-          event,
-        };
-      })
-    );
+    // Sort by purchase date (newest first)
+    allTickets.sort((a, b) => {
+      const dateA = a.purchasedAt || a.createdAt || 0;
+      const dateB = b.purchasedAt || b.createdAt || 0;
+      return new Date(dateB) - new Date(dateA);
+    });
 
-    res.json(apiResponse(true, 'Tickets retrieved', paginate(ticketsWithDetails, page, limit, total)));
+    logger.info(`Found ${allTickets.length} unique ticket types for user ${userAddress}`);
+
+    // Paginate results
+    const total = allTickets.length;
+    const startIndex = (page - 1) * limit;
+    const endIndex = startIndex + parseInt(limit);
+    const paginatedTickets = allTickets.slice(startIndex, endIndex);
+
+    res.json(apiResponse(true, 'Tickets retrieved', paginate(paginatedTickets, page, limit, total)));
   } catch (error) {
     logger.error('Get my tickets error:', error);
     res.status(500).json(apiResponse(false, 'Server error', null, error.message));

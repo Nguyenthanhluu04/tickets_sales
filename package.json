@@ -10,10 +10,12 @@
     "install:frontend": "cd frontend && npm install",
     "dev:backend": "cd backend && npm run dev",
     "dev:frontend": "cd frontend && npm run dev",
+    "dev": "concurrently \"npm run dev:backend\" \"npm run dev:frontend\"",
     "build:frontend": "cd frontend && npm run build",
     "test:blockchain": "cd blockchain && npm test",
     "test:backend": "cd backend && npm test",
-    "deploy:mumbai": "cd blockchain && npm run deploy:mumbai"
+    "deploy:amoy": "cd blockchain && npm run deploy:amoy",
+    "clean:cache": "cd blockchain && rmdir /s /q cache artifacts 2>nul || rm -rf cache artifacts"
   },
   "keywords": [
     "nft",

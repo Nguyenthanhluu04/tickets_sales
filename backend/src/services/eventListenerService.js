@@ -17,18 +17,28 @@ class EventListenerService {
 
   async initialize() {
     this.contract = blockchainConfig.getContract();
+    this.provider = blockchainConfig.getProvider();
+    
+    // Enable polling for better compatibility with public RPC nodes
+    if (this.provider && this.provider._pollingInterval === undefined) {
+      this.provider.pollingInterval = 12000; // 12 seconds (2 blocks on Polygon)
+    }
     
     // Setup provider error handling
-    const provider = blockchainConfig.getProvider();
-    if (provider) {
-      // Suppress filter not found errors (common with Hardhat node)
-      provider.on('error', (error) => {
-        if (error?.error?.message?.includes('filter not found')) {
-          // Silently ignore filter not found errors
-          return;
+    if (this.provider) {
+      // Suppress filter not found errors (common with public RPC nodes)
+      const originalEmit = this.provider.emit.bind(this.provider);
+      this.provider.emit = (eventName, ...args) => {
+        if (eventName === 'error') {
+          const error = args[0];
+          if (error?.code === 'UNKNOWN_ERROR' && 
+              error?.error?.message?.includes('filter not found')) {
+            // Silently ignore filter not found errors
+            return false;
+          }
         }
-        logger.error('Provider error:', error);
-      });
+        return originalEmit(eventName, ...args);
+      };
     }
   }
 
@@ -206,7 +216,7 @@ class EventListenerService {
    */
   async handleTicketPurchased(tokenId, eventId, buyer, amount, price, event) {
     try {
-      logger.info(`Ticket purchased: Token ${tokenId} by ${buyer}`);
+      logger.info(`Ticket purchased: Token ${tokenId} by ${buyer}, Amount: ${amount}`);
 
       // Get ticket type
       const ticketType = await TicketType.findOne({ tokenId: Number(tokenId) });
@@ -218,27 +228,38 @@ class EventListenerService {
       // Get event
       const eventData = await Event.findOne({ eventId: Number(eventId) });
 
-      // Create ticket record
-      const ticket = await Ticket.create({
-        tokenId: `${tokenId}-${buyer.toLowerCase()}`,
-        eventId: Number(eventId),
-        ticketTypeId: Number(tokenId),
-        owner: buyer.toLowerCase(),
-        ticketTypeName: ticketType.name,
-        price: price.toString(),
-        transactionHash: event.log.transactionHash,
-        isUsed: false,
-      });
+      // Create individual ticket records for each ticket purchased
+      const ticketsToCreate = [];
+      const purchaseAmount = Number(amount);
+      
+      for (let i = 0; i < purchaseAmount; i++) {
+        const uniqueTicketId = `${tokenId}-${buyer.toLowerCase()}-${Date.now()}-${i}`;
+        ticketsToCreate.push({
+          tokenId: uniqueTicketId,
+          eventId: Number(eventId),
+          ticketTypeId: Number(tokenId),
+          owner: buyer.toLowerCase(),
+          ticketTypeName: ticketType.name,
+          price: ticketType.price,
+          transactionHash: event.log.transactionHash,
+          isUsed: false,
+        });
+      }
+
+      // Bulk insert tickets
+      const createdTickets = await Ticket.insertMany(ticketsToCreate);
+      logger.info(`Created ${createdTickets.length} ticket records`);
 
       // Update ticket type supply
-      ticketType.currentSupply += Number(amount);
+      ticketType.currentSupply += purchaseAmount;
       await ticketType.save();
 
       // Update event stats
       if (eventData) {
-        eventData.totalTicketsSold += Number(amount);
+        eventData.totalTicketsSold += purchaseAmount;
         const currentRevenue = BigInt(eventData.revenue || '0');
-        const newRevenue = currentRevenue + price;
+        const totalPrice = BigInt(ticketType.price) * BigInt(purchaseAmount);
+        const newRevenue = currentRevenue + totalPrice;
         eventData.revenue = newRevenue.toString();
         await eventData.save();
       }
@@ -250,13 +271,13 @@ class EventListenerService {
         to: event.log.address,
         eventId: Number(eventId),
         ticketTypeId: Number(tokenId),
-        tokenId: ticket.tokenId,
+        tokenId: createdTickets.map(t => t.tokenId).join(','),
         type: 'purchase',
-        amount: price.toString(),
-        quantity: Number(amount),
+        amount: (BigInt(ticketType.price) * BigInt(purchaseAmount)).toString(),
+        quantity: purchaseAmount,
       });
 
-      logger.info(`Ticket ${ticket.tokenId} saved to database`);
+      logger.info(`${purchaseAmount} ticket(s) saved to database for buyer ${buyer}`);
     } catch (error) {
       logger.error('Error handling TicketPurchased:', error);
     }

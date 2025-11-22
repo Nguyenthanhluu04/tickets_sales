@@ -27,13 +27,13 @@ export const CHAIN_CONFIG = {
 }
 
 export const EVENT_CATEGORIES = [
-  { label: 'Music', value: 'Music' },
-  { label: 'Technology', value: 'Technology' },
-  { label: 'Sports', value: 'Sports' },
-  { label: 'Conference', value: 'Conference' },
-  { label: 'Theater', value: 'Theater' },
-  { label: 'Festival', value: 'Festival' },
-  { label: 'Workshop', value: 'Workshop' },
-  { label: 'Art', value: 'Art' },
-  { label: 'Other', value: 'Other' },
+  { label: 'Music', value: 'music' },
+  { label: 'Technology', value: 'technology' },
+  { label: 'Sports', value: 'sports' },
+  { label: 'Conference', value: 'conference' },
+  { label: 'Theater', value: 'theater' },
+  { label: 'Festival', value: 'festival' },
+  { label: 'Workshop', value: 'workshop' },
+  { label: 'Art', value: 'art' },
+  { label: 'Other', value: 'other' },
 ]

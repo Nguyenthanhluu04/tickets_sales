@@ -32,7 +32,7 @@
                     <font-awesome-icon v-else icon="times" />
                     {{ event.isActive ? ' Đang diễn ra' : ' Ngừng hoạt động' }}
                   </n-tag>
-                  <n-tag size="large" round>{{ event.category || 'Event' }}</n-tag>
+                  <n-tag size="large" round>{{ getCategoryLabel(event.category) }}</n-tag>
                 </n-space>
                 <h1 class="event-title">{{ event.name }}</h1>
                 <p class="event-subtitle">{{ event.description }}</p>
@@ -298,6 +298,8 @@ import { useTicketsStore } from '@/stores/tickets'
 import { format, formatDistanceToNow } from 'date-fns'
 import { ethers } from 'ethers'
 import axios from 'axios'
+import { EVENT_CATEGORIES, CONTRACT_ADDRESS, IPFS_GATEWAY, API_URL } from '@/utils/constants'
+import contractABI from '@/utils/contractABI.json'
 import AppLayout from '@/components/AppLayout.vue'
 
 const route = useRoute()
@@ -396,10 +398,21 @@ const formatEther = (value) => {
 
 const getDefaultImage = (category) => {
   const images = {
-    'Music': 'https://images.unsplash.com/photo-1459749411175-04bf5292ceea?w=1200',
-    'Technology': 'https://images.unsplash.com/photo-1540575467063-178a50c2df87?w=1200',
+    'music': 'https://images.unsplash.com/photo-1459749411175-04bf5292ceea?w=1200',
+    'technology': 'https://images.unsplash.com/photo-1540575467063-178a50c2df87?w=1200',
+    'sports': 'https://images.unsplash.com/photo-1461896836934-ffe607ba8211?w=1200',
+    'conference': 'https://images.unsplash.com/photo-1540575467063-178a50c2df87?w=1200',
+    'theater': 'https://images.unsplash.com/photo-1503095396549-807759245b35?w=1200',
+    'festival': 'https://images.unsplash.com/photo-1533174072545-7a4b6ad7a6c3?w=1200',
+    'workshop': 'https://images.unsplash.com/photo-1515187029135-18ee286d815b?w=1200',
+    'art': 'https://images.unsplash.com/photo-1561214115-f2f134cc4912?w=1200',
   }
   return images[category] || 'https://images.unsplash.com/photo-1492684223066-81342ee5ff30?w=1200'
+}
+
+const getCategoryLabel = (category) => {
+  const categoryItem = EVENT_CATEGORIES.find(cat => cat.value === category)
+  return categoryItem ? categoryItem.label : 'Event'
 }
 
 const handleImageError = (e) => {

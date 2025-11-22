@@ -23,3 +23,12 @@ coverage
 # Uploads
 uploads/*
 !uploads/.gitkeep
+
+# Temporary files
+temp/
+public/images/
+*.tmp
+*.temp
+
+# IPFS uploads (already on Pinata)
+public/

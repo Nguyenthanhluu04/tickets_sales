@@ -9,6 +9,10 @@ class BlockchainService {
   }
 
   async initialize() {
+    // First initialize the blockchain config
+    await blockchainConfig.initialize();
+    
+    // Then get contract and provider
     this.contract = blockchainConfig.getContract();
     this.provider = blockchainConfig.getProvider();
   }
@@ -101,7 +105,8 @@ class BlockchainService {
    */
   async getCurrentSupply(tokenId) {
     try {
-      const supply = await this.contract.totalSupply(tokenId);
+      // Use explicit function signature to avoid ambiguity
+      const supply = await this.contract['totalSupply(uint256)'](tokenId);
       return Number(supply);
     } catch (error) {
       logger.error('Error getting current supply:', error);

@@ -1,225 +1,288 @@
 # 🎫 NFT Event Ticketing Platform
 
-A complete blockchain-based event ticketing platform using NFT technology on Polygon network.
+Nền tảng bán vé sự kiện dựa trên công nghệ NFT và Blockchain trên mạng Polygon.
 
-## ✨ Features
+## ✨ Tính Năng
 
-- 🎟️ **NFT Tickets** - Event tickets as ERC-1155 tokens
-- 🔐 **Secure** - Blockchain-verified ticket ownership
-- 🎨 **Modern UI** - Beautiful Vue.js 3 interface
-- 💳 **Crypto Payments** - Purchase tickets with MATIC
-- 📱 **QR Codes** - Easy check-in with QR code scanning
-- 🛡️ **Anti-Counterfeit** - Prevent fake tickets
-- 📊 **Analytics** - Real-time event statistics
-- 👨‍💼 **Organizer Dashboard** - Manage events and tickets
+- 🎟️ **NFT Tickets** - Vé sự kiện dưới dạng ERC-1155 tokens
+- 🔐 **Bảo Mật** - Xác minh quyền sở hữu vé qua blockchain
+- 🎨 **Giao Diện Hiện Đại** - Vue.js 3 với Naive UI
+- 💳 **Thanh Toán Crypto** - Mua vé bằng MATIC
+- 📱 **QR Codes** - Check-in dễ dàng với mã QR
+- 🛡️ **Chống Giả Mạo** - Ngăn chặn vé giả
+- 📊 **Thống Kê** - Số liệu sự kiện real-time
+- 👨‍💼 **Dashboard Tổ Chức** - Quản lý sự kiện và vé
 
-## 🏗️ Project Structure
+## 🏗️ Cấu Trúc Dự Án
 
 ```
-nft-ticketing-platform/
-├── blockchain/          # Smart contracts & deployment
-├── backend/             # Express.js API server
-├── frontend/            # Vue.js 3 application
-└── docs/                # Documentation
+Ticket_Sales_BlockChain/
+├── blockchain/          # Smart contracts (Hardhat)
+│   ├── contracts/      # Solidity contracts
+│   ├── scripts/        # Deploy & verify scripts
+│   └── test/           # Contract tests
+├── backend/            # Express.js API server
+│   ├── src/
+│   │   ├── controllers/
+│   │   ├── models/
+│   │   ├── routes/
+│   │   ├── services/
+│   │   └── utils/
+│   └── scripts/        # Maintenance scripts
+├── frontend/           # Vue.js 3 application
+│   └── src/
+│       ├── components/
+│       ├── views/
+│       ├── stores/
+│       └── router/
+└── docs/               # Documentation
 ```
 
-## 🚀 Quick Start
+## 🚀 Cài Đặt Nhanh
 
-### Prerequisites
+### Yêu Cầu
 
 - Node.js >= 18.x
 - MongoDB >= 6.0
 - MetaMask browser extension
-- Git
 
-### 1. Clone Repository
+### 1. Clone & Install
+
+### 1. Clone & Install
 
 ```bash
+# Clone repository
 git clone <repository-url>
-cd nft-ticketing-platform
+cd Ticket_Sales_BlockChain
+
+# Install tất cả dependencies
+npm run install:all
 ```
 
-### 2. Setup Blockchain
+### 2. Cấu Hình Environment
+
+```bash
+# Blockchain
+cd blockchain
+cp .env.example .env
+# Điền DEPLOYER_PRIVATE_KEY và POLYGONSCAN_API_KEY
+
+# Backend
+cd ../backend
+cp .env.example .env
+# Điền MONGODB_URI, CONTRACT_ADDRESS, PINATA keys
+
+# Frontend
+cd ../frontend
+cp .env.example .env
+# Điền CONTRACT_ADDRESS
+```
+
+### 3. Deploy Smart Contract (Amoy Testnet)
 
 ```bash
 cd blockchain
-npm install
-cp .env.example .env
-# Edit .env with your keys
 npm run compile
-npm run deploy:mumbai
+npm run deploy:amoy
+# Copy CONTRACT_ADDRESS vào backend/.env và frontend/.env
 ```
 
-### 3. Setup Backend
+### 4. Khởi Động Development
 
 ```bash
+# Terminal 1: Backend
 cd backend
-npm install
-cp .env.example .env
-# Edit .env with MongoDB URI, contract address, etc.
 npm run dev
-```
 
-### 4. Setup Frontend
-
-```bash
+# Terminal 2: Frontend
 cd frontend
-npm install
-cp .env.example .env
-# Edit .env with API URL and contract address
 npm run dev
 ```
 
-## 📖 Documentation
+Truy cập: http://localhost:5173
 
-- [Smart Contract Documentation](./docs/SMART_CONTRACT.md)
-- [API Documentation](./docs/API.md)
-- [Deployment Guide](./docs/DEPLOYMENT.md)
-- [User Guide](./docs/USER_GUIDE.md)
-- [Architecture](./docs/ARCHITECTURE.md)
+## 🌐 Mạng Blockchain
+
+### Polygon Amoy Testnet (Khuyên Dùng)
+
+- **Chain ID:** 80002
+- **RPC:** https://rpc-amoy.polygon.technology
+- **Explorer:** https://amoy.polygonscan.com
+- **Faucet:** https://faucet.polygon.technology
+
+### Polygon Mainnet
+
+- **Chain ID:** 137
+- **RPC:** https://polygon-rpc.com
+- **Explorer:** https://polygonscan.com
 
 ## 🛠️ Tech Stack
 
 ### Blockchain
 
-- Solidity ^0.8.20
-- Hardhat
-- OpenZeppelin Contracts
-- Polygon Mumbai/Mainnet
+- **Solidity** 0.8.20
+- **Hardhat** - Development framework
+- **OpenZeppelin Contracts** - Secure smart contracts
+- **Polygon Amoy** - Testnet
+- **ERC-1155** - Multi-token standard
 
 ### Backend
 
-- Node.js + Express
-- MongoDB + Mongoose
-- Ethers.js
-- Pinata (IPFS)
-- JWT Authentication
+- **Node.js** + Express.js
+- **MongoDB** + Mongoose
+- **Ethers.js** v6 - Blockchain interaction
+- **Pinata** - IPFS storage
+- **JWT** - Authentication
+- **QRCode** - QR code generation
 
 ### Frontend
 
-- Vue.js 3 (Composition API)
-- Vite
-- Pinia
-- Naive UI
-- Ethers.js
-- Tailwind CSS
+- **Vue.js 3** (Composition API)
+- **Vite** - Build tool
+- **Pinia** - State management
+- **Naive UI** - Component library
+- **Ethers.js** - Web3 integration
+- **Tailwind CSS** - Styling
+- **Font Awesome** - Icons
 
-## 🌐 Networks
+## 📝 Scripts Hữu Ích
 
-### Testnet (Mumbai)
+### Root Level
 
-- Chain ID: 80001
-- RPC: https://rpc-mumbai.maticvigil.com
-- Explorer: https://mumbai.polygonscan.com
-- Faucet: https://faucet.polygon.technology
-
-### Mainnet (Polygon)
-
-- Chain ID: 137
-- RPC: https://polygon-rpc.com
-- Explorer: https://polygonscan.com
-
-## 📝 Environment Variables
-
-### Blockchain
-
-```env
-DEPLOYER_PRIVATE_KEY=your_private_key
-ALCHEMY_API_KEY=your_alchemy_key
-POLYGONSCAN_API_KEY=your_polygonscan_key
+```bash
+npm run install:all      # Install tất cả dependencies
+npm run dev:backend      # Chạy backend
+npm run dev:frontend     # Chạy frontend
+npm run deploy:amoy      # Deploy contract lên Amoy
 ```
 
-### Backend
+### Backend Scripts
+
+```bash
+node scripts/sync-blockchain-full.js      # Đồng bộ blockchain → database
+node scripts/sync-total-tickets-sold.js   # Cập nhật số vé đã bán
+node scripts/check-events.js              # Kiểm tra events
+node scripts/upload-local-images.js       # Upload ảnh lên IPFS
+```
+
+Xem thêm: [backend/scripts/README.md](./backend/scripts/README.md)
+
+## 🔧 Cấu Hình Environment
+
+### blockchain/.env
 
 ```env
-MONGODB_URI=mongodb://localhost:27017/nft-ticketing
-JWT_SECRET=your_jwt_secret
+DEPLOYER_PRIVATE_KEY=your_64_char_private_key_without_0x
+POLYGONSCAN_API_KEY=your_polygonscan_api_key
+AMOY_RPC_URL=https://rpc-amoy.polygon.technology
 CONTRACT_ADDRESS=deployed_contract_address
-PINATA_API_KEY=your_pinata_key
 ```
 
-### Frontend
+### backend/.env
+
+```env
+PORT=5000
+MONGODB_URI=mongodb://localhost:27017/nft-ticketing
+JWT_SECRET=your_secret_min_32_chars
+CONTRACT_ADDRESS=deployed_contract_address
+CHAIN_ID=80002
+AMOY_RPC_URL=https://rpc-amoy.polygon.technology
+PINATA_JWT=your_pinata_jwt
+FRONTEND_URL=http://localhost:5173
+```
+
+### frontend/.env
 
 ```env
 VITE_API_URL=http://localhost:5000/api
 VITE_CONTRACT_ADDRESS=deployed_contract_address
-VITE_CHAIN_ID=80001
+VITE_CHAIN_ID=80002
+VITE_RPC_URL=https://rpc-amoy.polygon.technology
 ```
 
 ## 🧪 Testing
 
-### Smart Contracts
-
 ```bash
+# Smart contracts
 cd blockchain
 npm test
-npm run coverage
-```
 
-### Backend
-
-```bash
+# Backend (nếu có tests)
 cd backend
 npm test
 ```
 
-### Frontend
-
-```bash
-cd frontend
-npm run test
-```
-
-## 📦 Deployment
-
-### Smart Contract
-
-```bash
-cd blockchain
-npm run deploy:polygon
-npm run verify:polygon
-```
-
-### Backend
-
-Deploy to VPS, AWS, or DigitalOcean
-
-### Frontend
-
-Deploy to Vercel or Netlify
-
-## 🔐 Security Features
+## 🔐 Bảo Mật
 
 - ✅ OpenZeppelin audited contracts
-- ✅ Role-based access control
+- ✅ Role-based access control (ADMIN_ROLE)
 - ✅ Reentrancy protection
-- ✅ Rate limiting
+- ✅ Rate limiting (API)
 - ✅ JWT authentication
 - ✅ Input validation
 - ✅ CORS protection
+- ✅ QR code signature verification
+
+## 📚 Documentation
+
+Xem thêm chi tiết trong folder `docs/`:
+
+- [Installation Guide](./docs/INSTALLATION.md)
+- [Startup Guide](./STARTUP_GUIDE.md)
 
 ## 🤝 Contributing
 
-Contributions are welcome! Please read our contributing guidelines first.
+Contributions are welcome! Vui lòng:
+
+1. Fork repository
+2. Tạo feature branch (`git checkout -b feature/AmazingFeature`)
+3. Commit changes (`git commit -m 'Add some AmazingFeature'`)
+4. Push to branch (`git push origin feature/AmazingFeature`)
+5. Open Pull Request
 
 ## 📄 License
 
-MIT License - see LICENSE file for details
+MIT License - xem file [LICENSE](./LICENSE)
 
-## 👥 Authors
+## ⚠️ Lưu Ý Quan Trọng
 
-Your Name - [@yourhandle](https://twitter.com/yourhandle)
+1. **KHÔNG commit** `.env` files vào Git
+2. **Backup** private keys và mnemonics
+3. **Test kỹ** trên testnet trước khi deploy mainnet
+4. **Audit** smart contracts trước khi production
+5. **Rotate** API keys định kỳ
+6. **Monitor** blockchain events và database sync
 
-## 🙏 Acknowledgments
+## 🐛 Troubleshooting
 
-- OpenZeppelin for secure smart contracts
-- Polygon for scalable blockchain infrastructure
-- Pinata for IPFS storage
+### Vé không hiển thị đủ?
 
-## 📞 Support
+```bash
+cd backend
+node scripts/sync-blockchain-full.js
+```
 
-For support, email support@example.com or join our Discord server.
+### totalTicketsSold không đúng?
+
+```bash
+cd backend
+node scripts/sync-total-tickets-sold.js
+```
+
+### QR Code không hiển thị?
+
+- Kiểm tra backend logs
+- Verify JWT_SECRET trong .env
+- Restart backend server
+
+### Không kết nối được MetaMask?
+
+- Kiểm tra CHAIN_ID (80002 cho Amoy)
+- Switch network trong MetaMask
+- Có đủ MATIC trong ví
 
 ---
 
-**⭐ Star this repo if you find it helpful!**
+**⭐ Star repo này nếu hữu ích!**
+
+**📧 Contact:** nguyenthanhluu2611@gmail.com

@@ -4,6 +4,8 @@ const { apiResponse, paginate } = require('../utils/helpers');
 const { logger } = require('../utils/logger');
 const blockchainService = require('../services/blockchainService');
 
+const IPFS_GATEWAY = process.env.IPFS_GATEWAY || 'https://gateway.pinata.cloud/ipfs/';
+
 /**
  * @desc Get all events
  * @route GET /api/events
@@ -30,7 +32,26 @@ exports.getAllEvents = async (req, res) => {
       .skip((page - 1) * limit)
       .lean();
 
-    res.json(apiResponse(true, 'Events retrieved', paginate(events, page, limit, total)));
+    // Add imageUrl and ticketTypes to each event
+    const eventsWithDetails = await Promise.all(events.map(async (event) => {
+      const ticketTypes = await TicketType.find({ eventId: event.eventId, isActive: true }).lean();
+      
+      // Generate full IPFS URL if bannerImageIPFS exists
+      let imageUrl = event.bannerImage || null;
+      if (event.bannerImageIPFS) {
+        imageUrl = event.bannerImageIPFS.startsWith('http') 
+          ? event.bannerImageIPFS 
+          : `${IPFS_GATEWAY}${event.bannerImageIPFS}`;
+      }
+      
+      return {
+        ...event,
+        imageUrl,
+        ticketTypes: ticketTypes
+      };
+    }));
+
+    res.json(apiResponse(true, 'Events retrieved', paginate(eventsWithDetails, page, limit, total)));
   } catch (error) {
     logger.error('Get all events error:', error);
     res.status(500).json(apiResponse(false, 'Server error', null, error.message));
@@ -54,10 +75,39 @@ exports.getEventById = async (req, res) => {
     // Get ticket types
     const ticketTypes = await TicketType.find({ eventId: id, isActive: true }).lean();
 
-    res.json(apiResponse(true, 'Event retrieved', {
+    // Get current supply from blockchain for each ticket type
+    try {
+      for (let i = 0; i < ticketTypes.length; i++) {
+        const currentSupply = await blockchainService.getCurrentSupply(ticketTypes[i].tokenId);
+        ticketTypes[i].currentSupply = currentSupply;
+        
+        // Update in database
+        await TicketType.updateOne(
+          { tokenId: ticketTypes[i].tokenId },
+          { currentSupply }
+        );
+      }
+    } catch (blockchainError) {
+      logger.warn('Failed to get current supply from blockchain:', blockchainError);
+      // Use database value if blockchain fails
+    }
+
+    // Generate full IPFS URL if bannerImageIPFS exists
+    let imageUrl = event.bannerImage || null;
+    if (event.bannerImageIPFS) {
+      imageUrl = event.bannerImageIPFS.startsWith('http') 
+        ? event.bannerImageIPFS 
+        : `${IPFS_GATEWAY}${event.bannerImageIPFS}`;
+    }
+    
+    // Add imageUrl field (use bannerImageIPFS if available, otherwise bannerImage)
+    const eventWithImage = {
       ...event,
+      imageUrl,
       ticketTypes,
-    }));
+    };
+
+    res.json(apiResponse(true, 'Event retrieved', eventWithImage));
   } catch (error) {
     logger.error('Get event error:', error);
     res.status(500).json(apiResponse(false, 'Server error', null, error.message));
