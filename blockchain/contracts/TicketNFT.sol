@@ -277,6 +277,53 @@ contract TicketNFT is ERC1155, AccessControl, ERC1155Supply, Pausable, Reentranc
     }
 
     /**
+     * @dev Update ticket price
+     * @param _tokenId Token ID
+     * @param _newPrice New price in wei
+     */
+    function updateTicketPrice(uint256 _tokenId, uint256 _newPrice)
+        external
+    {
+        TicketType storage ticket = ticketTypes[_tokenId];
+        Event storage eventData = events[ticket.eventId];
+        
+        require(
+            msg.sender == eventData.organizer || hasRole(ADMIN_ROLE, msg.sender),
+            "Not authorized"
+        );
+        require(ticket.isActive, "Ticket type not active");
+        require(_newPrice > 0, "Price must be greater than 0");
+
+        ticket.price = _newPrice;
+    }
+
+    /**
+     * @dev Update ticket sale times
+     * @param _tokenId Token ID
+     * @param _startSaleTime New start sale time
+     * @param _endSaleTime New end sale time
+     */
+    function updateTicketSaleTimes(
+        uint256 _tokenId,
+        uint256 _startSaleTime,
+        uint256 _endSaleTime
+    ) external {
+        TicketType storage ticket = ticketTypes[_tokenId];
+        Event storage eventData = events[ticket.eventId];
+        
+        require(
+            msg.sender == eventData.organizer || hasRole(ADMIN_ROLE, msg.sender),
+            "Not authorized"
+        );
+        require(ticket.isActive, "Ticket type not active");
+        require(_endSaleTime > _startSaleTime, "Invalid sale time range");
+        require(_endSaleTime <= eventData.startTime, "Sale must end before event");
+
+        ticket.startSaleTime = _startSaleTime;
+        ticket.endSaleTime = _endSaleTime;
+    }
+
+    /**
      * @dev Withdraw contract balance
      * @param _to Recipient address
      */

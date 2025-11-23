@@ -7,6 +7,8 @@ const { logger } = require('../utils/logger');
 const blockchainService = require('../services/blockchainService');
 const qrCodeService = require('../services/qrCodeService');
 
+const IPFS_GATEWAY = process.env.IPFS_GATEWAY || 'https://gateway.pinata.cloud/ipfs/';
+
 /**
  * @desc Sync ticket purchase from blockchain
  * @route POST /api/tickets/sync
@@ -104,7 +106,11 @@ exports.getMyTickets = async (req, res) => {
                 totalTickets: balance, // Total tickets of this type
                 event: {
                   ...event,
-                  imageUrl: event.bannerImageIPFS || event.bannerImage || null,
+                  imageUrl: event.bannerImageIPFS 
+                    ? (event.bannerImageIPFS.startsWith('http') 
+                      ? event.bannerImageIPFS 
+                      : `${IPFS_GATEWAY}${event.bannerImageIPFS}`)
+                    : event.bannerImage || null,
                 },
                 ticketType,
               });
