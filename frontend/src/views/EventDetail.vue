@@ -1,290 +1,308 @@
 <template>
   <app-layout>
-    <div class="event-detail">
-      <n-spin :show="loading" size="large">
-        <div v-if="event" class="event-container">
-          <!-- Event Hero -->
-          <div class="event-hero">
-            <div class="hero-image">
-              <img 
-                :src="event.imageUrl || getDefaultImage(event.category)" 
-                :alt="event.name"
-                @error="handleImageError"
-              >
-              <div class="hero-overlay"></div>
-            </div>
-            <div class="hero-content">
-              <n-button 
-                text 
-                class="back-button"
-                @click="$router.back()"
-              >
-                <template #icon>
-                  <font-awesome-icon icon="arrow-right" rotation="180" :style="{ fontSize: '1.2em' }" />
-                </template>
-                Quay lại danh sách
-              </n-button>
-              
-              <div class="hero-info">
-                <n-space>
-                  <n-tag :type="event.isActive ? 'success' : 'default'" size="large" round strong>
-                    <font-awesome-icon v-if="event.isActive" icon="circle-check" />
-                    <font-awesome-icon v-else icon="times" />
-                    {{ event.isActive ? ' Đang diễn ra' : ' Ngừng hoạt động' }}
-                  </n-tag>
-                  <n-tag size="large" round>{{ getCategoryLabel(event.category) }}</n-tag>
-                </n-space>
-                <h1 class="event-title">{{ event.name }}</h1>
-                <p class="event-subtitle">{{ event.description }}</p>
+    <div class="w-full min-h-screen bg-gray-50">
+      <!-- Loading Spinner -->
+      <div v-if="loading" class="flex items-center justify-center py-20">
+        <div class="animate-spin rounded-full h-16 w-16 border-b-2 border-indigo-600"></div>
+      </div>
+
+      <!-- Event Content -->
+      <div v-else-if="event">
+        <!-- Event Hero -->
+        <div class="relative h-96 overflow-hidden">
+          <div class="absolute w-full h-full">
+            <img 
+              :src="event.imageUrl || getDefaultImage(event.category)" 
+              :alt="event.name"
+              @error="handleImageError"
+              class="w-full h-full object-cover"
+            />
+          </div>
+          <div class="absolute inset-0 bg-gradient-to-b from-black/30 to-black/70"></div>
+          
+          <div class="relative z-10 max-w-7xl mx-auto px-8 h-full flex flex-col justify-between text-white">
+            <button 
+              @click="$router.back()"
+              class="self-start mt-8 flex items-center gap-2 text-white text-lg hover:opacity-80 transition-opacity"
+            >
+              <font-awesome-icon icon="arrow-right" rotation="180" class="text-xl" />
+              Quay lại danh sách
+            </button>
+            
+            <div class="mb-8">
+              <div class="flex gap-3 mb-4">
+                <span :class="[
+                  'inline-flex items-center gap-2 px-4 py-2 rounded-full font-semibold text-base',
+                  event.isActive ? 'bg-green-500' : 'bg-gray-500'
+                ]">
+                  <font-awesome-icon :icon="event.isActive ? 'circle-check' : 'times'" />
+                  {{ event.isActive ? 'Đang diễn ra' : 'Ngừng hoạt động' }}
+                </span>
+                <span class="inline-flex items-center px-4 py-2 bg-white/20 backdrop-blur rounded-full font-medium text-base">
+                  {{ getCategoryLabel(event.category) }}
+                </span>
               </div>
+              <h1 class="text-5xl font-extrabold mb-4 drop-shadow-lg">{{ event.name }}</h1>
+              <p class="text-xl opacity-95 max-w-3xl">{{ event.description }}</p>
             </div>
           </div>
+        </div>
 
-          <div class="content-wrapper">
+        <div class="max-w-7xl mx-auto px-8 pb-16">
+          <div class="grid grid-cols-1 lg:grid-cols-3 gap-8">
             <!-- Main Content -->
-            <div class="main-content">
+            <div class="lg:col-span-2 space-y-8">
               <!-- Event Details Card -->
-              <n-card class="info-card">
-                <template #header>
-                  <span><font-awesome-icon icon="info-circle" /> Thông tin sự kiện</span>
-                </template>
-                <div class="event-details-grid">
-                  <div class="detail-box">
-                    <div class="detail-icon"><font-awesome-icon icon="calendar" /></div>
-                    <div class="detail-content">
-                      <div class="detail-label">Ngày bắt đầu</div>
-                      <div class="detail-value">{{ formatDate(event.startTime) }}</div>
+              <div class="bg-white dark:bg-gray-800 shadow-lg rounded-2xl overflow-hidden">
+                <div class="px-6 py-4 border-b border-gray-200 dark:border-gray-700">
+                  <h2 class="text-xl font-semibold flex items-center gap-2">
+                    <font-awesome-icon icon="info-circle" /> Thông tin sự kiện
+                  </h2>
+                </div>
+                <div class="p-6">
+                  <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                    <div class="flex items-start gap-4 p-5 bg-gray-50 dark:bg-gray-900 rounded-xl">
+                      <div class="text-3xl flex-shrink-0"><font-awesome-icon icon="calendar" /></div>
+                      <div class="flex-1">
+                        <div class="text-sm text-gray-600 dark:text-gray-400 mb-1">Ngày bắt đầu</div>
+                        <div class="text-lg font-semibold text-gray-900 dark:text-white">{{ formatDate(event.startTime) }}</div>
+                      </div>
                     </div>
-                  </div>
-                  
-                  <div class="detail-box">
-                    <div class="detail-icon"><font-awesome-icon icon="clock" /></div>
-                    <div class="detail-content">
-                      <div class="detail-label">Ngày kết thúc</div>
-                      <div class="detail-value">{{ formatDate(event.endTime) }}</div>
+                    
+                    <div class="flex items-start gap-4 p-5 bg-gray-50 dark:bg-gray-900 rounded-xl">
+                      <div class="text-3xl flex-shrink-0"><font-awesome-icon icon="clock" /></div>
+                      <div class="flex-1">
+                        <div class="text-sm text-gray-600 dark:text-gray-400 mb-1">Ngày kết thúc</div>
+                        <div class="text-lg font-semibold text-gray-900 dark:text-white">{{ formatDate(event.endTime) }}</div>
+                      </div>
                     </div>
-                  </div>
-                  
-                  <div class="detail-box">
-                    <div class="detail-icon"><font-awesome-icon icon="location-dot" /></div>
-                    <div class="detail-content">
-                      <div class="detail-label">Địa điểm</div>
-                      <div class="detail-value">{{ event.location || 'Sẽ thông báo sau' }}</div>
+                    
+                    <div class="flex items-start gap-4 p-5 bg-gray-50 dark:bg-gray-900 rounded-xl">
+                      <div class="text-3xl flex-shrink-0"><font-awesome-icon icon="location-dot" /></div>
+                      <div class="flex-1">
+                        <div class="text-sm text-gray-600 dark:text-gray-400 mb-1">Địa điểm</div>
+                        <div class="text-lg font-semibold text-gray-900 dark:text-white">{{ event.location || 'Sẽ thông báo sau' }}</div>
+                      </div>
                     </div>
-                  </div>
-                  
-                  <div class="detail-box">
-                    <div class="detail-icon"><font-awesome-icon icon="user" /></div>
-                    <div class="detail-content">
-                      <div class="detail-label">Ban tổ chức</div>
-                      <div class="detail-value">{{ event.organizerName || 'Ban tổ chức sự kiện' }}</div>
-                      <n-ellipsis style="max-width: 200px; font-size: 0.85em; opacity: 0.7;">
-                        {{ event.organizer }}
-                      </n-ellipsis>
+                    
+                    <div class="flex items-start gap-4 p-5 bg-gray-50 dark:bg-gray-900 rounded-xl">
+                      <div class="text-3xl flex-shrink-0"><font-awesome-icon icon="user" /></div>
+                      <div class="flex-1">
+                        <div class="text-sm text-gray-600 dark:text-gray-400 mb-1">Ban tổ chức</div>
+                        <div class="text-lg font-semibold text-gray-900 dark:text-white">{{ event.organizerName || 'Ban tổ chức sự kiện' }}</div>
+                        <div class="text-xs text-gray-500 dark:text-gray-400 truncate max-w-[200px] mt-1">{{ event.organizer }}</div>
+                      </div>
                     </div>
                   </div>
                 </div>
-              </n-card>
+              </div>
 
               <!-- Description -->
-              <n-card class="description-card" v-if="event.description">
-                <template #header>
-                  <span><font-awesome-icon icon="info-circle" /> Giới thiệu sự kiện</span>
-                </template>
-                <p class="full-description">{{ event.description }}</p>
-              </n-card>
+              <div v-if="event.description" class="bg-white dark:bg-gray-800 shadow-lg rounded-2xl overflow-hidden">
+                <div class="px-6 py-4 border-b border-gray-200 dark:border-gray-700">
+                  <h2 class="text-xl font-semibold flex items-center gap-2">
+                    <font-awesome-icon icon="info-circle" /> Giới thiệu sự kiện
+                  </h2>
+                </div>
+                <div class="px-6 py-4">
+                  <p class="text-lg leading-relaxed text-gray-700 dark:text-gray-300">{{ event.description }}</p>
+                </div>
+              </div>
 
               <!-- Tickets Section -->
-              <n-card class="tickets-card">
-                <template #header>
-                  <div class="tickets-header">
-                    <h2><font-awesome-icon icon="ticket" /> Loại vé có sẵn</h2>
-                    <n-text depth="3">{{ ticketTypes.length }} loại vé đang bán</n-text>
-                  </div>
-                </template>
-
-                <!-- Wallet Alert -->
-                <n-alert 
-                  v-if="!walletStore.isConnected" 
-                  type="warning" 
-                  title="Chưa kết nối ví"
-                  style="margin-bottom: 1.5rem;"
-                >
-                  Vui lòng kết nối ví để mua vé
-                  <template #action>
-                    <n-button size="small" @click="connectWallet">
-                      Kết nối ví
-                    </n-button>
-                  </template>
-                </n-alert>
-
-                <!-- Tickets List -->
-                <div v-if="ticketTypes.length > 0" class="tickets-list">
-                  <div 
-                    v-for="ticket in ticketTypes" 
-                    :key="ticket.tokenId"
-                    class="ticket-item"
-                  >
-                    <div class="ticket-info-section">
-                      <div class="ticket-header">
-                        <h3 class="ticket-name">{{ ticket.name }}</h3>
-                        <div class="ticket-price">
-                          <span class="price-amount">{{ formatPrice(ticket.price) }}</span>
-                          <span class="price-currency">MATIC</span>
-                        </div>
-                      </div>
-                      
-                      <p class="ticket-description">{{ ticket.description || 'Vé vào cổng thường' }}</p>
-                      
-                      <div class="ticket-meta">
-                        <div class="meta-item">
-                          <span class="meta-icon"><font-awesome-icon icon="ticket" /></span>
-                          <span>{{ ticket.maxSupply - ticket.currentSupply }} / {{ ticket.maxSupply }} còn lại</span>
-                        </div>
-                        <div class="meta-item">
-                          <span class="meta-icon"><font-awesome-icon icon="clock" /></span>
-                          <span>Kết thúc bán {{ formatSaleEnd(ticket.endSaleTime) }}</span>
-                        </div>
-                      </div>
-
-                      <!-- Benefits -->
-                      <div v-if="ticket.benefits && ticket.benefits.length > 0" class="ticket-benefits">
-                        <div class="benefits-title"><font-awesome-icon icon="star" /> Quyền lợi:</div>
-                        <div class="benefits-list">
-                          <n-tag 
-                            v-for="(benefit, idx) in ticket.benefits" 
-                            :key="idx"
-                            size="small"
-                            round
-                          >
-                            {{ benefit }}
-                          </n-tag>
-                        </div>
-                      </div>
-                    </div>
-
-                    <div class="ticket-actions">
-                      <div class="quantity-selector">
-                        <n-button 
-                          circle 
-                          size="small"
-                          @click="decrementQuantity(ticket.tokenId)"
-                          :disabled="!canPurchase(ticket) || getQuantity(ticket.tokenId) <= 1"
-                        >
-                          <template #icon>
-                            <font-awesome-icon icon="minus" />
-                          </template>
-                        </n-button>
-                        <n-input-number
-                          v-model:value="ticketQuantities[ticket.tokenId]"
-                          :min="1"
-                          :max="Math.min(10, ticket.maxSupply - ticket.currentSupply)"
-                          size="small"
-                          :disabled="!canPurchase(ticket)"
-                          style="width: 80px"
-                        />
-                        <n-button 
-                          circle 
-                          size="small"
-                          @click="incrementQuantity(ticket.tokenId)"
-                          :disabled="!canPurchase(ticket) || getQuantity(ticket.tokenId) >= Math.min(10, ticket.maxSupply - ticket.currentSupply)"
-                        >
-                          <template #icon>
-                            <font-awesome-icon icon="plus" />
-                          </template>
-                        </n-button>
-                      </div>
-
-                      <n-button
-                        type="primary"
-                        size="large"
-                        strong
-                        :disabled="!canPurchase(ticket)"
-                        :loading="purchasingTicket === ticket.tokenId"
-                        @click="purchaseTicket(ticket)"
-                        class="buy-button"
-                      >
-                        <template #icon>
-                          <font-awesome-icon icon="wallet" />
-                        </template>
-                        {{ getPurchaseButtonText(ticket) }}
-                      </n-button>
-                    </div>
+              <div class="bg-white dark:bg-gray-800 shadow-lg rounded-2xl overflow-hidden">
+                <div class="px-6 py-4 border-b border-gray-200 dark:border-gray-700">
+                  <div class="flex justify-between items-center">
+                    <h2 class="text-2xl font-semibold flex items-center gap-2">
+                      <font-awesome-icon icon="ticket" /> Loại vé có sẵn
+                    </h2>
+                    <span class="text-gray-500 dark:text-gray-400">{{ ticketTypes.length }} loại vé đang bán</span>
                   </div>
                 </div>
 
-                <!-- No Tickets -->
-                <n-empty v-else description="Không có vé cho sự kiện này" class="no-tickets">
-                  <template #icon>
-                    <font-awesome-icon icon="ticket" :style="{ fontSize: '3em' }" />
-                  </template>
-                </n-empty>
-              </n-card>
+                <div class="p-6">
+                  <!-- Wallet Alert -->
+                  <div v-if="!walletStore.isConnected" class="mb-6 p-4 border-l-4 border-yellow-500 bg-yellow-50 dark:bg-yellow-900/20 rounded">
+                    <div class="flex justify-between items-center">
+                      <div>
+                        <h3 class="font-semibold text-yellow-800 dark:text-yellow-200">Chưa kết nối ví</h3>
+                        <p class="text-yellow-700 dark:text-yellow-300 text-sm">Vui lòng kết nối ví để mua vé</p>
+                      </div>
+                      <button 
+                        @click="connectWallet"
+                        class="px-4 py-2 bg-yellow-600 hover:bg-yellow-700 text-white rounded-lg font-medium transition-colors"
+                      >
+                        Kết nối ví
+                      </button>
+                    </div>
+                  </div>
+
+                  <!-- Tickets List -->
+                  <div v-if="ticketTypes.length > 0" class="space-y-6">
+                    <div 
+                      v-for="ticket in ticketTypes" 
+                      :key="ticket.tokenId"
+                      class="border-2 border-gray-200 dark:border-gray-700 rounded-2xl p-6 transition-all hover:border-indigo-500 hover:shadow-lg"
+                    >
+                      <div class="mb-6">
+                        <div class="flex justify-between items-start mb-3">
+                          <h3 class="text-2xl font-bold text-gray-900 dark:text-white">{{ ticket.name }}</h3>
+                          <div class="text-right">
+                            <div class="text-3xl font-bold text-indigo-600">{{ formatPrice(ticket.price) }}</div>
+                            <div class="text-sm text-gray-600 dark:text-gray-400">MATIC</div>
+                          </div>
+                        </div>
+                        
+                        <p class="text-gray-600 dark:text-gray-300 mb-4">{{ ticket.description || 'Vé vào cổng thường' }}</p>
+                        
+                        <div class="flex flex-wrap gap-6 mb-4">
+                          <div class="flex items-center gap-2 text-gray-700 dark:text-gray-300">
+                            <span class="text-lg"><font-awesome-icon icon="ticket" /></span>
+                            <span>{{ ticket.maxSupply - ticket.currentSupply }} / {{ ticket.maxSupply }} còn lại</span>
+                          </div>
+                          <div class="flex items-center gap-2 text-gray-700 dark:text-gray-300">
+                            <span class="text-lg"><font-awesome-icon icon="clock" /></span>
+                            <span>Kết thúc bán {{ formatSaleEnd(ticket.endSaleTime) }}</span>
+                          </div>
+                        </div>
+
+                        <!-- Benefits -->
+                        <div v-if="ticket.benefits && ticket.benefits.length > 0" class="pt-4 border-t border-gray-200 dark:border-gray-700">
+                          <div class="text-sm font-semibold mb-3 text-gray-700 dark:text-gray-300">
+                            <font-awesome-icon icon="star" /> Quyền lợi:
+                          </div>
+                          <div class="flex flex-wrap gap-2">
+                            <span 
+                              v-for="(benefit, idx) in ticket.benefits" 
+                              :key="idx"
+                              class="px-3 py-1 bg-indigo-100 dark:bg-indigo-900 text-indigo-800 dark:text-indigo-200 text-sm rounded-full"
+                            >
+                              {{ benefit }}
+                            </span>
+                          </div>
+                        </div>
+                      </div>
+
+                      <div class="flex items-center gap-4 pt-4 border-t border-gray-200 dark:border-gray-700">
+                        <div class="flex items-center gap-2">
+                          <button 
+                            @click="decrementQuantity(ticket.tokenId)"
+                            :disabled="!canPurchase(ticket) || getQuantity(ticket.tokenId) <= 1"
+                            class="w-10 h-10 rounded-full bg-gray-200 dark:bg-gray-700 hover:bg-gray-300 dark:hover:bg-gray-600 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+                          >
+                            <font-awesome-icon icon="minus" />
+                          </button>
+                          <input
+                            v-model.number="ticketQuantities[ticket.tokenId]"
+                            type="number"
+                            :min="1"
+                            :max="Math.min(10, ticket.maxSupply - ticket.currentSupply)"
+                            :disabled="!canPurchase(ticket)"
+                            class="w-20 px-3 py-2 text-center border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 outline-none disabled:opacity-50"
+                          />
+                          <button 
+                            @click="incrementQuantity(ticket.tokenId)"
+                            :disabled="!canPurchase(ticket) || getQuantity(ticket.tokenId) >= Math.min(10, ticket.maxSupply - ticket.currentSupply)"
+                            class="w-10 h-10 rounded-full bg-gray-200 dark:bg-gray-700 hover:bg-gray-300 dark:hover:bg-gray-600 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+                          >
+                            <font-awesome-icon icon="plus" />
+                          </button>
+                        </div>
+
+                        <button
+                          @click="purchaseTicket(ticket)"
+                          :disabled="!canPurchase(ticket) || purchasingTicket === ticket.tokenId"
+                          class="flex-1 px-6 py-3 bg-indigo-600 hover:bg-indigo-700 text-white font-semibold rounded-lg transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
+                        >
+                          <font-awesome-icon icon="wallet" v-if="purchasingTicket !== ticket.tokenId" />
+                          <div v-if="purchasingTicket === ticket.tokenId" class="animate-spin rounded-full h-5 w-5 border-b-2 border-white"></div>
+                          {{ getPurchaseButtonText(ticket) }}
+                        </button>
+                      </div>
+                    </div>
+                  </div>
+
+                  <!-- No Tickets -->
+                  <div v-else class="text-center py-12">
+                    <font-awesome-icon icon="ticket" class="text-6xl text-gray-400 mb-4" />
+                    <p class="text-gray-600 dark:text-gray-400">Không có vé cho sự kiện này</p>
+                  </div>
+                </div>
+              </div>
             </div>
 
             <!-- Sidebar -->
-            <div class="sidebar">
+            <div class="space-y-6 pt-[95px] ">
               <!-- Quick Info -->
-              <n-card class="quick-info-card">
-                <div class="quick-info-item">
-                  <div class="quick-icon"><font-awesome-icon icon="chart-line" /></div>
-                  <div>
-                    <div class="quick-label">Vé đã bán</div>
-                    <div class="quick-value">{{ event.totalTicketsSold || 0 }}</div>
+              <div class="bg-white dark:bg-gray-800 shadow-lg rounded-2xl overflow-hidden">
+                <div class="p-6 space-y-4">
+                  <div class="flex items-center gap-4">
+                    <div class="text-3xl flex-shrink-0"><font-awesome-icon icon="chart-line" /></div>
+                    <div>
+                      <div class="text-sm text-gray-600 dark:text-gray-400">Vé đã bán</div>
+                      <div class="text-2xl font-bold text-gray-900 dark:text-white">{{ event.totalTicketsSold || 0 }}</div>
+                    </div>
                   </div>
-                </div>
-                
-                <n-divider />
-                
-                <div class="quick-info-item">
-                  <div class="quick-icon"><font-awesome-icon icon="money-bill" /></div>
-                  <div>
-                    <div class="quick-label">Doanh thu</div>
-                    <div class="quick-value">{{ formatEther(event.revenue || '0') }} MATIC</div>
+                  
+                  <div class="border-t border-gray-200 dark:border-gray-700 pt-4">
+                    <div class="flex items-center gap-4">
+                      <div class="text-3xl flex-shrink-0"><font-awesome-icon icon="money-bill" /></div>
+                      <div>
+                        <div class="text-sm text-gray-600 dark:text-gray-400">Doanh thu</div>
+                        <div class="text-2xl font-bold text-gray-900 dark:text-white">{{ formatEther(event.revenue || '0') }} MATIC</div>
+                      </div>
+                    </div>
                   </div>
-                </div>
 
-                <n-divider />
-
-                <div class="quick-info-item">
-                  <div class="quick-icon"><font-awesome-icon icon="globe" /></div>
-                  <div>
-                    <div class="quick-label">Blockchain</div>
-                    <div class="quick-value">Polygon Amoy</div>
+                  <div class="border-t border-gray-200 dark:border-gray-700 pt-4">
+                    <div class="flex items-center gap-4">
+                      <div class="text-3xl flex-shrink-0"><font-awesome-icon icon="globe" /></div>
+                      <div>
+                        <div class="text-sm text-gray-600 dark:text-gray-400">Blockchain</div>
+                        <div class="text-2xl font-bold text-gray-900 dark:text-white">Polygon Amoy</div>
+                      </div>
+                    </div>
                   </div>
                 </div>
-              </n-card>
+              </div>
 
               <!-- Share Card -->
-              <n-card class="share-card">
-                <template #header>
-                  <span><font-awesome-icon icon="share" /> Chia sẻ sự kiện</span>
-                </template>
-                <n-space vertical>
-                  <n-button block ghost>
-                    <template #icon><font-awesome-icon icon="share" /></template>
+              <!-- <div class="bg-white dark:bg-gray-800 shadow-lg rounded-2xl overflow-hidden">
+                <div class="px-6 py-4 border-b border-gray-200 dark:border-gray-700">
+                  <h2 class="text-xl font-semibold flex items-center gap-2">
+                    <font-awesome-icon icon="share" /> Chia sẻ sự kiện
+                  </h2>
+                </div>
+                <div class="p-6 space-y-3">
+                  <button class="w-full px-4 py-3 border-2 border-gray-300 dark:border-gray-600 hover:border-indigo-500 dark:hover:border-indigo-500 rounded-lg transition-colors flex items-center justify-center gap-2">
+                    <font-awesome-icon icon="share" />
                     Chia sẻ lên Twitter
-                  </n-button>
-                  <n-button block ghost>
-                    <template #icon><font-awesome-icon icon="info-circle" /></template>
+                  </button>
+                  <button class="w-full px-4 py-3 border-2 border-gray-300 dark:border-gray-600 hover:border-indigo-500 dark:hover:border-indigo-500 rounded-lg transition-colors flex items-center justify-center gap-2">
+                    <font-awesome-icon icon="info-circle" />
                     Sao chép liên kết
-                  </n-button>
-                </n-space>
-              </n-card>
+                  </button>
+                </div>
+              </div> -->
             </div>
           </div>
         </div>
+      </div>
 
-        <!-- Error State -->
-        <div v-else-if="error" class="error-state">
-          <div class="error-icon"><font-awesome-icon icon="triangle-exclamation" :style="{ fontSize: '4rem', color: '#ff6b6b' }" /></div>
-          <h2>Không tìm thấy sự kiện</h2>
-          <p>{{ error }}</p>
-          <n-button type="primary" @click="$router.push('/events')">
-            Quay lại danh sách
-          </n-button>
+      <!-- Error State -->
+      <div v-else-if="error" class="text-center py-16 max-w-2xl mx-auto px-8">
+        <div class="mb-4">
+          <font-awesome-icon icon="triangle-exclamation" class="text-6xl text-red-500" />
         </div>
-      </n-spin>
+        <h2 class="text-3xl font-bold mb-4 text-gray-900">Không tìm thấy sự kiện</h2>
+        <p class="text-gray-600 mb-8">{{ error }}</p>
+        <button 
+          @click="$router.push('/events')"
+          class="px-6 py-3 bg-indigo-600 hover:bg-indigo-700 text-white font-semibold rounded-lg transition-colors"
+        >
+          Quay lại danh sách
+        </button>
+      </div>
     </div>
   </app-layout>
 </template>
@@ -429,7 +447,6 @@ const connectWallet = async () => {
 }
 
 const purchaseTicket = async (ticket) => {
-  // Check wallet connection first
   if (!walletStore.isConnected) {
     window.$message?.warning('Vui lòng kết nối ví')
     return
@@ -441,7 +458,6 @@ const purchaseTicket = async (ticket) => {
   const quantity = getQuantity(ticket.tokenId)
   
   try {
-    // Auto-login if not authenticated
     if (!userStore.isAuthenticated) {
       window.$message?.info('Đang đăng nhập...')
       try {
@@ -455,11 +471,9 @@ const purchaseTicket = async (ticket) => {
       }
     }
 
-    // Purchase ticket
     await ticketsStore.purchaseTicket(event.value.eventId, ticket.tokenId, quantity, ticket.price)
     window.$message?.success(`Mua thành công ${quantity} vé!`)
     
-    // Reload event data to update ticket availability
     const response = await axios.get(`http://localhost:5000/api/events/${event.value.eventId}`)
     if (response.data.success) {
       event.value = response.data.data
@@ -474,7 +488,6 @@ const purchaseTicket = async (ticket) => {
 }
 
 onMounted(async () => {
-  // Load event data first (don't wait for wallet/auth)
   loading.value = true
   
   try {
@@ -483,9 +496,7 @@ onMounted(async () => {
     
     if (response.data.success) {
       event.value = response.data.data
-      // Get ticket types from event data
       ticketTypes.value = response.data.data.ticketTypes || []
-      // Initialize quantities
       ticketTypes.value.forEach(ticket => {
         if (!ticketQuantities[ticket.tokenId]) {
           ticketQuantities[ticket.tokenId] = 1
@@ -504,356 +515,5 @@ onMounted(async () => {
 </script>
 
 <style scoped>
-.event-detail {
-  width: 100%;
-  min-height: 100vh;
-  background: #f5f7fa;
-}
-
-/* Hero Section */
-.event-hero {
-  position: relative;
-  height: 400px;
-  overflow: hidden;
-}
-
-.hero-image {
-  position: absolute;
-  width: 100%;
-  height: 100%;
-}
-
-.hero-image img {
-  width: 100%;
-  height: 100%;
-  object-fit: cover;
-}
-
-.hero-overlay {
-  position: absolute;
-  top: 0;
-  left: 0;
-  right: 0;
-  bottom: 0;
-  background: linear-gradient(to bottom, rgba(0,0,0,0.3), rgba(0,0,0,0.7));
-}
-
-.hero-content {
-  position: relative;
-  z-index: 1;
-  max-width: 1200px;
-  margin: 0 auto;
-  padding: 2rem;
-  height: 100%;
-  display: flex;
-  flex-direction: column;
-  justify-content: space-between;
-  color: white;
-}
-
-.back-button {
-  align-self: flex-start;
-  color: white !important;
-  font-size: 1.1rem;
-}
-
-.hero-info {
-  margin-bottom: 2rem;
-}
-
-.event-title {
-  font-size: 3rem;
-  font-weight: 800;
-  margin: 1rem 0 0.5rem 0;
-  color: white;
-  text-shadow: 0 2px 10px rgba(0,0,0,0.3);
-}
-
-.event-subtitle {
-  font-size: 1.25rem;
-  opacity: 0.95;
-  margin: 0;
-  max-width: 800px;
-}
-
-/* Content Wrapper */
-.content-wrapper {
-  max-width: 1200px;
-  margin: -4rem auto 0;
-  padding: 0 2rem 4rem 2rem;
-  display: grid;
-  grid-template-columns: 1fr 350px;
-  gap: 2rem;
-}
-
-.main-content {
-  display: flex;
-  flex-direction: column;
-  gap: 2rem;
-}
-
-/* Cards */
-.info-card,
-.description-card,
-.tickets-card {
-  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.08);
-}
-
-/* Event Details Grid */
-.event-details-grid {
-  display: grid;
-  grid-template-columns: repeat(2, 1fr);
-  gap: 1.5rem;
-}
-
-.detail-box {
-  display: flex;
-  align-items: flex-start;
-  gap: 1rem;
-  padding: 1.25rem;
-  background: #f8f9fa;
-  border-radius: 12px;
-}
-
-.detail-icon {
-  font-size: 2rem;
-  flex-shrink: 0;
-}
-
-.detail-content {
-  flex: 1;
-}
-
-.detail-label {
-  font-size: 0.85rem;
-  color: #666;
-  margin-bottom: 0.25rem;
-}
-
-.detail-value {
-  font-size: 1.1rem;
-  font-weight: 600;
-  color: #1a1a1a;
-}
-
-/* Description */
-.full-description {
-  font-size: 1.05rem;
-  line-height: 1.8;
-  color: #444;
-  margin: 0;
-}
-
-/* Tickets */
-.tickets-header {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-}
-
-.tickets-header h2 {
-  margin: 0;
-  font-size: 1.5rem;
-}
-
-.tickets-list {
-  display: flex;
-  flex-direction: column;
-  gap: 1.5rem;
-}
-
-.ticket-item {
-  border: 2px solid #e8e8e8;
-  border-radius: 16px;
-  padding: 1.5rem;
-  transition: all 0.3s ease;
-}
-
-.ticket-item:hover {
-  border-color: #667eea;
-  box-shadow: 0 4px 20px rgba(102, 126, 234, 0.1);
-}
-
-.ticket-info-section {
-  margin-bottom: 1.5rem;
-}
-
-.ticket-header {
-  display: flex;
-  justify-content: space-between;
-  align-items: flex-start;
-  margin-bottom: 0.75rem;
-}
-
-.ticket-name {
-  font-size: 1.35rem;
-  font-weight: 700;
-  margin: 0;
-  color: #1a1a1a;
-}
-
-.ticket-price {
-  text-align: right;
-}
-
-.price-amount {
-  font-size: 1.75rem;
-  font-weight: 700;
-  color: #667eea;
-}
-
-.price-currency {
-  font-size: 0.9rem;
-  color: #666;
-  margin-left: 0.25rem;
-}
-
-.ticket-description {
-  color: #666;
-  margin: 0 0 1rem 0;
-  line-height: 1.6;
-}
-
-.ticket-meta {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 1.5rem;
-  margin-bottom: 1rem;
-}
-
-.meta-item {
-  display: flex;
-  align-items: center;
-  gap: 0.5rem;
-  font-size: 0.95rem;
-  color: #444;
-}
-
-.meta-icon {
-  font-size: 1.1rem;
-}
-
-.ticket-benefits {
-  margin-top: 1rem;
-  padding-top: 1rem;
-  border-top: 1px solid #e8e8e8;
-}
-
-.benefits-title {
-  font-size: 0.9rem;
-  font-weight: 600;
-  margin-bottom: 0.75rem;
-  color: #444;
-}
-
-.benefits-list {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 0.5rem;
-}
-
-.ticket-actions {
-  display: flex;
-  align-items: center;
-  gap: 1rem;
-  padding-top: 1rem;
-  border-top: 1px solid #e8e8e8;
-}
-
-.quantity-selector {
-  display: flex;
-  align-items: center;
-  gap: 0.5rem;
-}
-
-.buy-button {
-  flex: 1;
-}
-
-.no-tickets {
-  padding: 3rem 0;
-}
-
-/* Sidebar */
-.sidebar {
-  display: flex;
-  flex-direction: column;
-  gap: 1.5rem;
-}
-
-.quick-info-card,
-.share-card {
-  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.08);
-}
-
-.quick-info-item {
-  display: flex;
-  align-items: center;
-  gap: 1rem;
-}
-
-.quick-icon {
-  font-size: 2rem;
-  flex-shrink: 0;
-}
-
-.quick-label {
-  font-size: 0.85rem;
-  color: #666;
-  margin-bottom: 0.25rem;
-}
-
-.quick-value {
-  font-size: 1.25rem;
-  font-weight: 700;
-  color: #1a1a1a;
-}
-
-/* Error State */
-.error-state {
-  text-align: center;
-  padding: 4rem 2rem;
-  max-width: 600px;
-  margin: 0 auto;
-}
-
-.error-icon {
-  margin-bottom: 1rem;
-}
-
-.error-state h2 {
-  font-size: 2rem;
-  margin: 0 0 1rem 0;
-}
-
-.error-state p {
-  color: #666;
-  margin: 0 0 2rem 0;
-  font-size: 1.1rem;
-}
-
-/* Responsive */
-@media (max-width: 768px) {
-  .event-title {
-    font-size: 2rem;
-  }
-
-  .content-wrapper {
-    grid-template-columns: 1fr;
-    margin-top: -2rem;
-  }
-
-  .event-details-grid {
-    grid-template-columns: 1fr;
-  }
-
-  .ticket-actions {
-    flex-direction: column;
-    align-items: stretch;
-  }
-
-  .quantity-selector {
-    justify-content: center;
-  }
-}
+/* Tailwind CSS handles all styling */
 </style>

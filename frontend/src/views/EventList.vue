@@ -1,134 +1,135 @@
 <template>
   <app-layout>
-    <div class="event-list">
+    <div class="w-full min-h-screen bg-gray-50">
       <!-- Header Section -->
-      <div class="page-header">
-        <div class="header-content">
-          <h1 class="page-title">Khám phá sự kiện</h1>
-          <p class="page-subtitle">Tìm kiếm và đặt vé cho các sự kiện tuyệt vời</p>
+      <div class="bg-gradient-to-br from-indigo-600 to-purple-700 py-12 px-8 text-white text-center">
+        <div class="max-w-7xl mx-auto">
+          <h1 class="text-5xl font-extrabold mb-2">Khám phá sự kiện</h1>
+          <p class="text-xl opacity-95">Tìm kiếm và đặt vé cho các sự kiện tuyệt vời</p>
         </div>
       </div>
 
-      <div class="content-container">
+      <div class="max-w-7xl mx-auto -mt-8 px-8 pb-16">
         <!-- Filters -->
-        <div class="filters-section">
-          <n-space size="large">
-            <n-input
-              v-model:value="searchQuery"
-              placeholder="Tìm kiếm sự kiện theo tên hoặc mô tả..."
-              clearable
-              size="large"
-              style="min-width: 300px"
-            >
-              <template #prefix>
-                <font-awesome-icon icon="search" />
-              </template>
-            </n-input>
+        <div class="bg-white rounded-2xl shadow-lg p-8 mb-8">
+          <div class="flex flex-wrap gap-6 mb-4">
+            <div class="relative flex-1 min-w-[300px]">
+              <font-awesome-icon icon="search" class="absolute left-4 top-1/2 -translate-y-1/2 text-gray-400" />
+              <input
+                v-model="searchQuery"
+                type="text"
+                placeholder="Tìm kiếm sự kiện theo tên hoặc mô tả..."
+                class="w-full pl-12 pr-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 outline-none"
+              />
+            </div>
             
-            <n-select
-              v-model:value="categoryFilter"
-              :options="categoryOptions"
-              placeholder="All Categories"
-              clearable
-              size="large"
-              style="min-width: 200px"
-            />
+            <select
+              v-model="categoryFilter"
+              class="px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 outline-none min-w-[200px]"
+            >
+              <option :value="null">All Categories</option>
+              <option v-for="opt in categoryOptions.slice(1)" :key="opt.value" :value="opt.value">
+                {{ opt.label }}
+              </option>
+            </select>
 
-            <n-select
-              v-model:value="statusFilter"
-              :options="statusOptions"
-              placeholder="All Status"
-              clearable
-              size="large"
-              style="min-width: 150px"
-            />
-          </n-space>
+            <select
+              v-model="statusFilter"
+              class="px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 outline-none min-w-[150px]"
+            >
+              <option :value="null">All Status</option>
+              <option value="active">Đang hoạt động</option>
+              <option value="inactive">Ngừng hoạt động</option>
+            </select>
+          </div>
 
-          <div class="results-info">
-            <n-text depth="3">
-              {{ filteredEvents.length }} sự kiện{{ filteredEvents.length !== 1 ? '' : '' }}
-            </n-text>
+          <div class="pt-4 border-t border-gray-200">
+            <span class="text-gray-500">
+              {{ filteredEvents.length }} sự kiện
+            </span>
           </div>
         </div>
 
         <!-- Events Grid -->
-        <n-spin :show="loading">
-          <div v-if="filteredEvents.length > 0" class="events-grid">
-            <div 
-              v-for="event in filteredEvents" 
-              :key="event._id"
-              class="event-card-wrapper"
-            >
-              <div class="event-card" @click="goToEvent(event)">
-                <div class="event-image-container">
-                  <img 
-                    :src="event.imageUrl || event.bannerImageIPFS || event.bannerImage || getDefaultImage(event.category)" 
-                    :alt="event.name"
-                    class="event-image"
-                    @error="handleImageError($event, event.category)"
-                  >
-                  <div class="image-overlay">
-                    <n-tag :type="event.isActive ? 'success' : 'default'" size="large" round strong>
-                      <font-awesome-icon v-if="event.isActive" icon="circle-check" />
-                      <font-awesome-icon v-else icon="times" />
-                      {{ event.isActive ? ' Đang diễn ra' : ' Ngừng' }}
-                    </n-tag>
-                  </div>
-                  <div class="event-category-badge">
-                    <n-tag size="medium" round>{{ getCategoryLabel(event.category) }}</n-tag>
-                  </div>
-                </div>
-                
-                <div class="event-card-content">
-                  <h3 class="event-name">{{ event.name }}</h3>
-                  <p class="event-description">{{ event.description }}</p>
-                  
-                  <div class="event-info">
-                    <div class="info-item">
-                      <span class="info-icon"><font-awesome-icon icon="calendar" /></span>
-                      <span class="info-text">{{ formatDate(event.startTime) }}</span>
-                    </div>
-                    <div class="info-item">
-                      <span class="info-icon"><font-awesome-icon icon="location-dot" /></span>
-                      <span class="info-text">{{ event.location || 'Sẽ thông báo sau' }}</span>
-                    </div>
-                    <div class="info-item">
-                      <span class="info-icon"><font-awesome-icon icon="ticket" /></span>
-                      <span class="info-text">{{ event.totalTicketsSold || 0 }} vé đã bán</span>
-                    </div>
-                    <div class="info-item" v-if="event.organizerName">
-                      <span class="info-icon"><font-awesome-icon icon="user" /></span>
-                      <span class="info-text">{{ event.organizerName }}</span>
-                    </div>
-                  </div>
-
-                  <n-button 
-                    type="primary" 
-                    block 
-                    strong
-                    size="large"
-                    class="view-details-button"
-                  >
-                    <template #icon>
-                      <font-awesome-icon icon="ticket" />
-                    </template>
-                    Xem chi tiết & Mua vé
-                  </n-button>
-                </div>
+        <div v-if="loading" class="flex items-center justify-center py-20">
+          <div class="animate-spin rounded-full h-12 w-12 border-b-2 border-indigo-600"></div>
+        </div>
+        
+        <div v-else-if="filteredEvents.length > 0" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
+          <div 
+            v-for="event in filteredEvents" 
+            :key="event._id"
+            @click="goToEvent(event)"
+            class="bg-white rounded-2xl shadow-lg overflow-hidden transition-all duration-300 hover:-translate-y-2 hover:shadow-2xl cursor-pointer flex flex-col"
+          >
+            <div class="relative h-56 overflow-hidden">
+              <img 
+                :src="event.imageUrl || event.bannerImageIPFS || event.bannerImage || getDefaultImage(event.category)" 
+                :alt="event.name"
+                class="w-full h-full object-cover transition-transform duration-300 hover:scale-110"
+                @error="handleImageError($event, event.category)"
+              />
+              <div class="absolute top-4 right-4">
+                <span :class="[
+                  'inline-flex items-center gap-2 px-4 py-2 rounded-full text-white font-semibold text-base',
+                  event.isActive ? 'bg-green-500' : 'bg-gray-500'
+                ]">
+                  <font-awesome-icon :icon="event.isActive ? 'circle-check' : 'times'" />
+                  {{ event.isActive ? 'Đang diễn ra' : 'Ngừng' }}
+                </span>
+              </div>
+              <div class="absolute top-4 left-4">
+                <span class="inline-block px-3 py-1.5 bg-white/90 backdrop-blur rounded-full text-sm font-medium">
+                  {{ getCategoryLabel(event.category) }}
+                </span>
               </div>
             </div>
-          </div>
+            
+            <div class="p-6 flex-1 flex flex-col">
+              <h3 class="text-2xl font-bold mb-3 text-gray-900 leading-tight">{{ event.name }}</h3>
+              <p class="text-gray-600 mb-6 leading-relaxed flex-1 line-clamp-2">{{ event.description }}</p>
+              
+              <div class="flex flex-col gap-3 mb-6 p-5 bg-gray-50 rounded-xl">
+                <div class="flex items-center gap-3">
+                  <span class="text-xl min-w-[24px]"><font-awesome-icon icon="calendar" /></span>
+                  <span class="text-base text-gray-700">{{ formatDate(event.startTime) }}</span>
+                </div>
+                <div class="flex items-center gap-3">
+                  <span class="text-xl min-w-[24px]"><font-awesome-icon icon="location-dot" /></span>
+                  <span class="text-base text-gray-700">{{ event.location || 'Sẽ thông báo sau' }}</span>
+                </div>
+                <div class="flex items-center gap-3">
+                  <span class="text-xl min-w-[24px]"><font-awesome-icon icon="ticket" /></span>
+                  <span class="text-base text-gray-700">{{ event.totalTicketsSold || 0 }} vé đã bán</span>
+                </div>
+                <div v-if="event.organizerName" class="flex items-center gap-3">
+                  <span class="text-xl min-w-[24px]"><font-awesome-icon icon="user" /></span>
+                  <span class="text-base text-gray-700">{{ event.organizerName }}</span>
+                </div>
+              </div>
 
-          <!-- Empty State -->
-          <div v-else class="empty-state">
-            <div class="empty-icon"><font-awesome-icon icon="search" :style="{ fontSize: '4rem', opacity: 0.5 }" /></div>
-            <h3>Không tìm thấy sự kiện</h3>
-            <p>Thử điều chỉnh bộ lọc hoặc từ khóa tìm kiếm</p>
-            <n-button @click="clearFilters" type="primary" ghost>
-              Xóa bộ lọc
-            </n-button>
+              <button class="w-full px-6 py-3 bg-indigo-600 hover:bg-indigo-700 text-white font-semibold rounded-lg transition-colors flex items-center justify-center gap-2">
+                <font-awesome-icon icon="ticket" />
+                Xem chi tiết & Mua vé
+              </button>
+            </div>
           </div>
-        </n-spin>
+        </div>
+
+        <!-- Empty State -->
+        <div v-else class="text-center py-16 bg-white rounded-2xl shadow-lg">
+          <div class="mb-4">
+            <font-awesome-icon icon="search" class="text-6xl opacity-50" />
+          </div>
+          <h3 class="text-2xl font-semibold mb-2 text-gray-800">Không tìm thấy sự kiện</h3>
+          <p class="text-gray-600 mb-6">Thử điều chỉnh bộ lọc hoặc từ khóa tìm kiếm</p>
+          <button 
+            @click="clearFilters"
+            class="px-6 py-2 border-2 border-indigo-600 text-indigo-600 hover:bg-indigo-50 font-medium rounded-lg transition-colors"
+          >
+            Xóa bộ lọc
+          </button>
+        </div>
       </div>
     </div>
   </app-layout>
@@ -221,7 +222,6 @@ const handleImageError = (e, category) => {
 }
 
 const goToEvent = (event) => {
-  // Use blockchain eventId, not MongoDB _id
   router.push(`/events/${event.eventId}`)
 }
 
@@ -245,211 +245,5 @@ onMounted(async () => {
 </script>
 
 <style scoped>
-.event-list {
-  width: 100%;
-  min-height: 100vh;
-  background: #f5f7fa;
-}
-
-/* Page Header */
-.page-header {
-  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-  padding: 3rem 2rem 4rem 2rem;
-  color: white;
-  text-align: center;
-}
-
-.header-content {
-  max-width: 1200px;
-  margin: 0 auto;
-}
-
-.page-title {
-  font-size: 3rem;
-  font-weight: 800;
-  margin: 0 0 0.5rem 0;
-}
-
-.page-subtitle {
-  font-size: 1.25rem;
-  opacity: 0.95;
-  margin: 0;
-}
-
-/* Content Container */
-.content-container {
-  max-width: 1200px;
-  margin: -2rem auto 0;
-  padding: 0 2rem 4rem 2rem;
-}
-
-/* Filters Section */
-.filters-section {
-  background: white;
-  padding: 2rem;
-  border-radius: 16px;
-  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.08);
-  margin-bottom: 2rem;
-}
-
-.results-info {
-  margin-top: 1rem;
-  padding-top: 1rem;
-  border-top: 1px solid #e8e8e8;
-}
-
-/* Events Grid */
-.events-grid {
-  display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(350px, 1fr));
-  gap: 2rem;
-}
-
-.event-card-wrapper {
-  position: relative;
-}
-
-.event-card {
-  background: white;
-  border-radius: 16px;
-  overflow: hidden;
-  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.08);
-  transition: all 0.3s ease;
-  cursor: pointer;
-  height: 100%;
-  display: flex;
-  flex-direction: column;
-}
-
-.event-card:hover {
-  transform: translateY(-8px);
-  box-shadow: 0 12px 40px rgba(0, 0, 0, 0.15);
-}
-
-.event-image-container {
-  position: relative;
-  width: 100%;
-  height: 220px;
-  overflow: hidden;
-}
-
-.event-image {
-  width: 100%;
-  height: 100%;
-  object-fit: cover;
-  transition: transform 0.3s ease;
-}
-
-.event-card:hover .event-image {
-  transform: scale(1.1);
-}
-
-.image-overlay {
-  position: absolute;
-  top: 1rem;
-  right: 1rem;
-}
-
-.event-category-badge {
-  position: absolute;
-  top: 1rem;
-  left: 1rem;
-}
-
-/* Event Card Content */
-.event-card-content {
-  padding: 1.5rem;
-  flex: 1;
-  display: flex;
-  flex-direction: column;
-}
-
-.event-name {
-  font-size: 1.4rem;
-  font-weight: 700;
-  margin: 0 0 0.75rem 0;
-  color: #1a1a1a;
-  line-height: 1.3;
-}
-
-.event-description {
-  color: #666;
-  margin: 0 0 1.5rem 0;
-  line-height: 1.6;
-  flex: 1;
-  display: -webkit-box;
-  -webkit-line-clamp: 2;
-  -webkit-box-orient: vertical;
-  overflow: hidden;
-}
-
-.event-info {
-  display: flex;
-  flex-direction: column;
-  gap: 0.75rem;
-  margin-bottom: 1.5rem;
-  padding: 1.25rem;
-  background: #f8f9fa;
-  border-radius: 12px;
-}
-
-.info-item {
-  display: flex;
-  align-items: center;
-  gap: 0.75rem;
-}
-
-.info-icon {
-  font-size: 1.2rem;
-  min-width: 24px;
-}
-
-.info-text {
-  font-size: 0.95rem;
-  color: #444;
-  line-height: 1.4;
-}
-
-.view-details-button {
-  margin-top: auto;
-}
-
-/* Empty State */
-.empty-state {
-  text-align: center;
-  padding: 4rem 2rem;
-  background: white;
-  border-radius: 16px;
-  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.08);
-}
-
-.empty-icon {
-  margin-bottom: 1rem;
-}
-
-.empty-state h3 {
-  font-size: 1.5rem;
-  margin: 0 0 0.5rem 0;
-  color: #333;
-}
-
-.empty-state p {
-  color: #666;
-  margin: 0 0 1.5rem 0;
-}
-
-/* Responsive */
-@media (max-width: 768px) {
-  .page-title {
-    font-size: 2rem;
-  }
-  
-  .events-grid {
-    grid-template-columns: 1fr;
-  }
-
-  .filters-section {
-    padding: 1.5rem;
-  }
-}
+/* Tailwind CSS handles all styling */
 </style>

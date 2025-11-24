@@ -1,89 +1,99 @@
 <template>
-  <div class="auth-container">
-    <div class="auth-card">
-      <div class="auth-header">
-        <font-awesome-icon icon="user-plus" class="wallet-icon" />
-        <h1>Đăng Ký</h1>
-        <p>Kết nối ví MetaMask để tạo tài khoản</p>
-      </div>
+  <div class="min-h-screen flex items-center justify-center bg-gradient-to-br from-indigo-600 to-purple-700 py-12 px-4 sm:px-6 lg:px-8">
+    <div class="w-full max-w-md">
+      <div class="bg-white rounded-2xl shadow-2xl p-8 sm:p-12">
+        <div class="text-center mb-8">
+          <div class="inline-block p-4 bg-indigo-100 rounded-full mb-4">
+            <font-awesome-icon icon="user-plus" class="text-5xl text-indigo-600" />
+          </div>
+          <h1 class="text-3xl font-extrabold text-gray-900 mb-2">Đăng Ký</h1>
+          <p class="text-gray-600">Kết nối ví MetaMask để tạo tài khoản</p>
+        </div>
 
-      <n-space vertical size="large">
-        <n-alert type="info">
-          <template #icon>
-            <font-awesome-icon icon="info-circle" />
-          </template>
-          Hệ thống sử dụng ví MetaMask làm phương thức đăng nhập an toàn. Tài khoản của bạn sẽ được tạo tự động khi bạn kết nối ví lần đầu.
-        </n-alert>
+        <div class="space-y-6">
+          <div class="p-4 bg-blue-50 border border-blue-200 rounded-lg">
+            <div class="flex gap-3">
+              <div class="flex-shrink-0">
+                <font-awesome-icon icon="info-circle" class="text-blue-600 text-xl" />
+              </div>
+              <div class="text-sm text-blue-800">
+                Hệ thống sử dụng ví MetaMask làm phương thức đăng nhập an toàn. Tài khoản của bạn sẽ được tạo tự động khi bạn kết nối ví lần đầu.
+              </div>
+            </div>
+          </div>
 
-        <n-button
-          v-if="!walletStore.isConnected"
-          type="primary"
-          block
-          size="large"
-          :loading="loading"
-          @click="connectWallet"
-          strong
-        >
-          <template #icon>
-            <font-awesome-icon icon="wallet" />
-          </template>
-          Kết nối ví MetaMask
-        </n-button>
+          <div v-if="!walletStore.isConnected">
+            <button
+              @click="connectWallet"
+              :disabled="loading"
+              class="w-full flex items-center justify-center gap-3 px-6 py-4 bg-indigo-600 hover:bg-indigo-700 disabled:bg-indigo-400 text-white font-bold rounded-lg transition-colors text-lg"
+            >
+              <div v-if="loading" class="animate-spin rounded-full h-5 w-5 border-b-2 border-white"></div>
+              <font-awesome-icon v-else icon="wallet" />
+              Kết nối ví MetaMask
+            </button>
+          </div>
 
-        <div v-else>
-          <n-alert type="success" style="margin-bottom: 1rem;">
-            <template #icon>
-              <font-awesome-icon icon="check-circle" />
-            </template>
-            Ví đã kết nối: {{ formatAddress(walletStore.address) }}
-          </n-alert>
+          <div v-else class="space-y-4">
+            <div class="p-4 bg-green-50 border border-green-200 rounded-lg">
+              <div class="flex gap-3">
+                <div class="flex-shrink-0">
+                  <font-awesome-icon icon="check-circle" class="text-green-600 text-xl" />
+                </div>
+                <div>
+                  <div class="text-sm font-semibold text-green-800 mb-1">Ví đã kết nối</div>
+                  <div class="text-xs text-green-700 font-mono">{{ formatAddress(walletStore.address) }}</div>
+                </div>
+              </div>
+            </div>
 
-          <n-button
-            type="success"
-            block
-            size="large"
-            @click="goToLogin"
-            strong
-          >
-            <template #icon>
+            <button
+              @click="goToLogin"
+              class="w-full flex items-center justify-center gap-3 px-6 py-4 bg-green-600 hover:bg-green-700 text-white font-bold rounded-lg transition-colors text-lg"
+            >
               <font-awesome-icon icon="sign-in-alt" />
-            </template>
-            Tiếp tục đăng nhập
-          </n-button>
-        </div>
+              Tiếp tục đăng nhập
+            </button>
+          </div>
 
-        <n-divider />
+          <div class="relative">
+            <div class="absolute inset-0 flex items-center">
+              <div class="w-full border-t border-gray-300"></div>
+            </div>
+            <div class="relative flex justify-center text-sm">
+              <span class="px-2 bg-white text-gray-500">Chưa có ví MetaMask?</span>
+            </div>
+          </div>
 
-        <n-text depth="3" style="text-align: center; display: block;">
-          Chưa có ví MetaMask?
-        </n-text>
-        <n-button
-          text
-          type="primary"
-          block
-          tag="a"
-          href="https://metamask.io/download/"
-          target="_blank"
-        >
-          <template #icon>
+          <a
+            href="https://metamask.io/download/"
+            target="_blank"
+            class="w-full flex items-center justify-center gap-3 px-6 py-3 border-2 border-gray-300 hover:border-indigo-500 hover:text-indigo-600 text-gray-700 font-medium rounded-lg transition-colors"
+          >
             <font-awesome-icon icon="download" />
-          </template>
-          Tải MetaMask miễn phí
-        </n-button>
+            Tải MetaMask miễn phí
+          </a>
 
-        <div class="auth-footer">
-          <n-text depth="3">Đã có tài khoản?</n-text>
-          <n-button text type="primary" @click="$router.push('/login')">
-            Đăng nhập ngay
-          </n-button>
+          <div class="text-center pt-4 border-t border-gray-200">
+            <span class="text-gray-600">Đã có tài khoản? </span>
+            <button 
+              @click="$router.push('/login')"
+              class="text-indigo-600 hover:text-indigo-700 font-semibold"
+            >
+              Đăng nhập ngay
+            </button>
+          </div>
         </div>
-      </n-space>
 
-      <n-space justify="center" style="margin-top: 2rem;">
-        <n-button text @click="$router.push('/')">
-          <font-awesome-icon icon="arrow-left" /> Về trang chủ
-        </n-button>
-      </n-space>
+        <div class="mt-8 text-center">
+          <button 
+            @click="$router.push('/')"
+            class="text-gray-600 hover:text-gray-800 inline-flex items-center gap-2"
+          >
+            <font-awesome-icon icon="arrow-left" /> Về trang chủ
+          </button>
+        </div>
+      </div>
     </div>
   </div>
 </template>
@@ -92,11 +102,9 @@
 import { ref } from 'vue'
 import { useRouter } from 'vue-router'
 import { useWalletStore } from '@/stores/wallet'
-import { useMessage } from 'naive-ui'
 
 const router = useRouter()
 const walletStore = useWalletStore()
-const message = useMessage()
 
 const loading = ref(false)
 
@@ -109,10 +117,10 @@ const connectWallet = async () => {
   loading.value = true
   try {
     await walletStore.connectWallet()
-    message.success('Kết nối ví thành công! Vui lòng đăng nhập để tiếp tục.')
+    window.$message?.success('Kết nối ví thành công! Vui lòng đăng nhập để tiếp tục.')
   } catch (error) {
     console.error('Connection error:', error)
-    message.error('Không thể kết nối ví: ' + (error.message || 'Vui lòng thử lại'))
+    window.$message?.error('Không thể kết nối ví: ' + (error.message || 'Vui lòng thử lại'))
   } finally {
     loading.value = false
   }
@@ -124,63 +132,5 @@ const goToLogin = () => {
 </script>
 
 <style scoped>
-.auth-container {
-  min-height: 100vh;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-  padding: 2rem;
-}
-
-.auth-card {
-  background: white;
-  border-radius: 16px;
-  padding: 3rem;
-  width: 100%;
-  max-width: 450px;
-  box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
-}
-
-.auth-header {
-  text-align: center;
-  margin-bottom: 2rem;
-}
-
-.wallet-icon {
-  font-size: 3rem;
-  color: #667eea;
-  margin-bottom: 1rem;
-}
-
-.auth-header h1 {
-  font-size: 2rem;
-  font-weight: 700;
-  margin: 0 0 0.5rem 0;
-  color: #1a1a1a;
-}
-
-.auth-header p {
-  color: #666;
-  margin: 0;
-  font-size: 0.95rem;
-}
-
-.auth-footer {
-  text-align: center;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  gap: 0.5rem;
-}
-
-@media (max-width: 576px) {
-  .auth-card {
-    padding: 2rem 1.5rem;
-  }
-
-  .auth-header h1 {
-    font-size: 1.5rem;
-  }
-}
+/* Tailwind CSS handles all styling */
 </style>
