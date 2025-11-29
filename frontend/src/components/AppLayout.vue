@@ -67,8 +67,12 @@
             Kết nối ví
           </n-button>
           
-          <!-- User Menu for admin -->
-          <n-dropdown v-if="userStore.user?.role === 'admin'" :options="adminMenuOptions" @select="handleUserMenuSelect">
+          <!-- User Menu for admin/organizer -->
+          <n-dropdown 
+            v-if="userStore.user && ['admin', 'organizer'].includes(userStore.user.role)" 
+            :options="adminMenuOptions" 
+            @select="handleUserMenuSelect"
+          >
             <n-button circle type="primary">
               <template #icon>
                 <font-awesome-icon icon="gear" />
@@ -98,15 +102,25 @@ const walletStore = useWalletStore()
 const userStore = useUserStore()
 const message = useMessage()
 
-const menuOptions = [
-  { label: 'Trang chủ', key: '/' },
-  { label: 'Sự kiện', key: '/events' },
-  { label: 'Vé của tôi', key: '/my-tickets' },
-  { label: 'Hồ sơ', key: '/profile' },
-]
+const menuOptions = computed(() => {
+  const baseMenu = [
+    { label: 'Trang chủ', key: '/' },
+    { label: 'Sự kiện', key: '/events' },
+    { label: 'Vé của tôi', key: '/my-tickets' },
+    { label: 'Hồ sơ', key: '/profile' },
+  ]
+
+  // Add admin menu if user is admin or organizer
+  if (userStore.user && ['admin', 'organizer'].includes(userStore.user.role)) {
+    baseMenu.push({ label: '🔧 Admin', key: '/admin' })
+  }
+
+  return baseMenu
+})
 
 const adminMenuOptions = [
   { label: 'Bảng điều khiển', key: 'admin-dashboard' },
+  { label: 'Tạo sự kiện', key: 'admin-create' },
   { label: 'Quản lý sự kiện', key: 'admin-events' },
   { label: 'Đăng xuất', key: 'logout' },
 ]
@@ -136,7 +150,9 @@ const handleUserMenuSelect = (key) => {
   if (key === 'logout') {
     handleDisconnect()
   } else if (key === 'admin-dashboard') {
-    router.push('/admin/dashboard')
+    router.push('/admin')
+  } else if (key === 'admin-create') {
+    router.push('/admin/create-event')
   } else if (key === 'admin-events') {
     router.push('/admin/events')
   }

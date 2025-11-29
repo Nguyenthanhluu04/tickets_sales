@@ -139,15 +139,20 @@ class EventListenerService {
         return;
       }
 
+      // Get full event data from contract (includes description)
+      // Call the events mapping directly: events(uint256) returns Event struct
+      const eventData = await this.contract.events(eventId);
+
       // Create event in database
       await Event.create({
         eventId: Number(eventId),
-        name,
+        name: eventData.name || name,
+        description: eventData.description || 'No description provided',
         organizer: organizer.toLowerCase(),
         startTime: new Date(Number(startTime) * 1000),
         endTime: new Date(Number(endTime) * 1000),
         transactionHash: event.log.transactionHash,
-        isActive: true,
+        isActive: eventData.isActive,
       });
 
       // Save transaction

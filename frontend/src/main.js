@@ -17,7 +17,9 @@ import {
   faFilter, faXmark, faBars, faHome, faList, faQrcode, faUserCircle, faSignOut,
   faGear, faChevronDown, faChevronUp, faTag, faBuilding, faEnvelope, faPhone,
   faGlobe, faMapMarkerAlt, faCheck, faTimes, faInfoCircle, faTriangleExclamation,
-  faLock, faSignInAlt, faUserPlus
+  faLock, faSignInAlt, faUserPlus, faArrowLeft, faExclamationTriangle, faTrash,
+  faCheckCircle, faDownload, faHashtag, faBan, faEdit, faSave, faImage, faUpload,
+  faDollarSign
 } from '@fortawesome/free-solid-svg-icons'
 import { faHeart as faHeartRegular } from '@fortawesome/free-regular-svg-icons'
 
@@ -29,7 +31,9 @@ library.add(
   faFilter, faXmark, faBars, faHome, faList, faQrcode, faUserCircle, faSignOut,
   faGear, faChevronDown, faChevronUp, faTag, faBuilding, faEnvelope, faPhone,
   faGlobe, faMapMarkerAlt, faCheck, faTimes, faInfoCircle, faTriangleExclamation,
-  faHeartRegular, faLock, faSignInAlt, faUserPlus
+  faHeartRegular, faLock, faSignInAlt, faUserPlus, faArrowLeft, faExclamationTriangle, faTrash,
+  faCheckCircle, faDownload, faHashtag, faBan, faEdit, faSave, faImage, faUpload,
+  faDollarSign
 )
 
 const app = createApp(App)

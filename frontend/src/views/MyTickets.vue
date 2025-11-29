@@ -90,11 +90,11 @@
                 </div>
 
                 <div class="flex justify-between items-center">
-                  <span class="flex items-center gap-2 text-gray-600">
+                  <span class="flex items-center gap-2 text-gray-600 ">
                     <font-awesome-icon icon="ticket" />
                     Mã vé
                   </span>
-                  <span class="font-semibold text-gray-900 font-mono text-sm">{{ ticket.tokenId }}</span>
+                  <span class="font-semibold text-gray-900 w-52 line-clamp-2 font-mono text-sm">{{ ticket.tokenId }}</span>
                 </div>
 
                 <div class="flex justify-between items-center">

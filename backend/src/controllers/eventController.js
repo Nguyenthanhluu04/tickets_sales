@@ -180,7 +180,20 @@ exports.getEventStats = async (req, res) => {
  */
 exports.syncEventFromBlockchain = async (req, res) => {
   try {
-    const { eventId, name, description, startTime, endTime, organizer, isActive, totalTicketsSold, revenue } = req.body;
+    const { 
+      eventId, 
+      name, 
+      description, 
+      startTime, 
+      endTime, 
+      organizer, 
+      isActive, 
+      totalTicketsSold, 
+      revenue,
+      category,
+      location,
+      bannerImage 
+    } = req.body;
 
     // Check if event already exists
     let event = await Event.findOne({ eventId });
@@ -195,6 +208,9 @@ exports.syncEventFromBlockchain = async (req, res) => {
       event.isActive = isActive;
       event.totalTicketsSold = totalTicketsSold || 0;
       event.revenue = revenue || '0';
+      if (category) event.category = category;
+      if (location) event.location = location;
+      if (bannerImage) event.bannerImage = bannerImage;
       await event.save();
 
       logger.info(`Event ${eventId} updated from blockchain`);
@@ -212,6 +228,9 @@ exports.syncEventFromBlockchain = async (req, res) => {
       isActive,
       totalTicketsSold: totalTicketsSold || 0,
       revenue: revenue || '0',
+      category: category || 'other',
+      location: location || '',
+      bannerImage: bannerImage || ''
     });
 
     logger.info(`Event ${eventId} synced from blockchain`);
@@ -229,7 +248,22 @@ exports.syncEventFromBlockchain = async (req, res) => {
 exports.syncTicketTypeFromBlockchain = async (req, res) => {
   try {
     const { id: eventId } = req.params;
-    const { tokenId, name, price, maxSupply, currentSupply, saleStartTime, saleEndTime, isActive } = req.body;
+    const { 
+      tokenId, 
+      name, 
+      price, 
+      maxSupply, 
+      currentSupply, 
+      saleStartTime, 
+      saleEndTime, 
+      startSaleTime,
+      endSaleTime,
+      isActive 
+    } = req.body;
+
+    // Support both naming conventions
+    const actualStartSaleTime = saleStartTime || startSaleTime;
+    const actualEndSaleTime = saleEndTime || endSaleTime;
 
     // Check if event exists
     const event = await Event.findOne({ eventId });
@@ -246,8 +280,8 @@ exports.syncTicketTypeFromBlockchain = async (req, res) => {
       ticketType.price = price;
       ticketType.maxSupply = maxSupply;
       ticketType.currentSupply = currentSupply || 0;
-      ticketType.saleStartTime = saleStartTime;
-      ticketType.saleEndTime = saleEndTime;
+      ticketType.saleStartTime = actualStartSaleTime;
+      ticketType.saleEndTime = actualEndSaleTime;
       ticketType.isActive = isActive;
       await ticketType.save();
 
@@ -263,8 +297,8 @@ exports.syncTicketTypeFromBlockchain = async (req, res) => {
       price,
       maxSupply,
       currentSupply: currentSupply || 0,
-      saleStartTime,
-      saleEndTime,
+      saleStartTime: actualStartSaleTime,
+      saleEndTime: actualEndSaleTime,
       isActive,
     });
 

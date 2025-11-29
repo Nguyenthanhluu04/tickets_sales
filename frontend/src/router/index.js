@@ -60,13 +60,13 @@ const routes = [
     path: '/admin/create-event',
     name: 'CreateEvent',
     component: CreateEvent,
-    meta: { title: 'Tạo sự kiện', requiresAuth: true },
+    meta: { title: 'Tạo sự kiện', requiresAuth: true, requiresAdmin: true },
   },
   {
     path: '/admin/events',
     name: 'ManageEvents',
     component: ManageEvents,
-    meta: { title: 'Quản lý sự kiện', requiresAuth: true },
+    meta: { title: 'Quản lý sự kiện', requiresAuth: true, requiresAdmin: true },
   },
   {
     path: '/:pathMatch(.*)*',
@@ -87,7 +87,7 @@ const router = createRouter({
 })
 
 // Navigation guards
-router.beforeEach((to, from, next) => {
+router.beforeEach(async (to, from, next) => {
   const walletStore = useWalletStore()
   const userStore = useUserStore()
 
@@ -98,8 +98,28 @@ router.beforeEach((to, from, next) => {
   if (to.meta.requiresAuth) {
     if (!walletStore.isConnected || !userStore.isAuthenticated) {
       // Redirect to home and show message
+      window.$message?.warning('Vui lòng đăng nhập để truy cập trang này')
       next({ name: 'Home' })
       return
+    }
+
+    // Check if route requires admin role
+    if (to.meta.requiresAdmin) {
+      // Wait for user data if not loaded
+      if (!userStore.user) {
+        try {
+          await userStore.fetchUser()
+        } catch (error) {
+          console.error('Failed to fetch user:', error)
+        }
+      }
+
+      // Check if user has admin or organizer role
+      if (userStore.user && !['admin', 'organizer'].includes(userStore.user.role)) {
+        window.$message?.error('Bạn không có quyền truy cập trang này. Cần role Admin hoặc Organizer.')
+        next({ name: 'Home' })
+        return
+      }
     }
   }
 
