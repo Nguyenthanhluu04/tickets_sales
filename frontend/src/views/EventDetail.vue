@@ -339,8 +339,13 @@ const canPurchase = (ticket) => {
   if (ticket.currentSupply >= ticket.maxSupply) return false
   
   const now = new Date()
-  const saleStart = new Date(ticket.startSaleTime)
-  const saleEnd = new Date(ticket.endSaleTime)
+  // Convert Unix timestamp (seconds) to milliseconds
+  const saleStart = typeof ticket.startSaleTime === 'number' 
+    ? new Date(ticket.startSaleTime * 1000) 
+    : new Date(ticket.startSaleTime)
+  const saleEnd = typeof ticket.endSaleTime === 'number' 
+    ? new Date(ticket.endSaleTime * 1000) 
+    : new Date(ticket.endSaleTime)
   
   return now >= saleStart && now <= saleEnd
 }
@@ -369,8 +374,13 @@ const getPurchaseButtonText = (ticket) => {
   if (ticket.currentSupply >= ticket.maxSupply) return 'Hết vé'
   
   const now = new Date()
-  const saleStart = new Date(ticket.startSaleTime)
-  const saleEnd = new Date(ticket.endSaleTime)
+  // Convert Unix timestamp (seconds) to milliseconds
+  const saleStart = typeof ticket.startSaleTime === 'number' 
+    ? new Date(ticket.startSaleTime * 1000) 
+    : new Date(ticket.startSaleTime)
+  const saleEnd = typeof ticket.endSaleTime === 'number' 
+    ? new Date(ticket.endSaleTime * 1000) 
+    : new Date(ticket.endSaleTime)
   
   if (now < saleStart) return 'Chưa mở bán'
   if (now > saleEnd) return 'Đã kết thúc bán'
@@ -380,19 +390,27 @@ const getPurchaseButtonText = (ticket) => {
   return `Mua ${quantity} vé × ${totalPrice.toFixed(4)} MATIC`
 }
 
-const formatDate = (dateString) => {
-  if (!dateString) return 'TBA'
+const formatDate = (timestamp) => {
+  if (!timestamp) return 'TBA'
   try {
-    return format(new Date(dateString), 'EEEE, MMMM dd, yyyy • h:mm a')
+    // Convert Unix timestamp (seconds) to milliseconds
+    const date = typeof timestamp === 'number' 
+      ? new Date(timestamp * 1000) 
+      : new Date(timestamp)
+    return format(date, 'dd/MM/yyyy HH:mm')
   } catch {
     return 'TBA'
   }
 }
 
-const formatSaleEnd = (dateString) => {
-  if (!dateString) return 'TBA'
+const formatSaleEnd = (timestamp) => {
+  if (!timestamp) return 'TBA'
   try {
-    return formatDistanceToNow(new Date(dateString), { addSuffix: true })
+    // Convert Unix timestamp (seconds) to milliseconds
+    const date = typeof timestamp === 'number' 
+      ? new Date(timestamp * 1000) 
+      : new Date(timestamp)
+    return formatDistanceToNow(date, { addSuffix: true })
   } catch {
     return 'TBA'
   }

@@ -18,7 +18,7 @@
 
       <div class="max-w-4xl mx-auto px-8 -mt-8 pb-16">
         <!-- Notice -->
-        <div v-if="userStore.user && userStore.user.role === 'user'" class="mb-6 p-4 border-l-4 border-red-500 bg-red-50 rounded-lg">
+        <div v-if="userStore.user && userStore.user.role !== 'organizer' && userStore.user.role !== 'admin'" class="mb-6 p-4 border-l-4 border-red-500 bg-red-50 rounded-lg">
           <div class="flex gap-3">
             <font-awesome-icon icon="exclamation-triangle" class="text-red-600 text-xl mt-1" />
             <div>
@@ -132,9 +132,11 @@
                 <div class="text-sm text-green-800">
                   <strong>Lưu ý về thời gian:</strong>
                   <ul class="list-disc list-inside mt-2 space-y-1">
-                    <li>Thời gian bắt đầu phải ít nhất <strong>2 giờ sau</strong> hiện tại</li>
-                    <li>Vé sẽ bắt đầu bán ngay sau khi tạo sự kiện</li>
+                    <li>Thời gian bắt đầu phải ít nhất <strong>3 giờ sau</strong> hiện tại</li>
+                    <li>Vé sẽ bắt đầu bán <strong>2 phút sau</strong> khi tạo mỗi loại vé</li>
+                    <li>Vé ngừng bán <strong>1 giờ trước</strong> khi sự kiện bắt đầu</li>
                     <li>Thời gian kết thúc phải sau thời gian bắt đầu</li>
+                    <li class="text-red-600 font-semibold">⚠️ Nếu có nhiều loại vé (3+), cần xác nhận MetaMask NHANH!</li>
                   </ul>
                 </div>
               </div>
@@ -228,12 +230,17 @@
                 <font-awesome-icon icon="wallet" class="text-orange-600 mt-1" />
                 <div class="text-sm text-green-800">
                   <strong>Lưu ý về MetaMask:</strong>
-                  <p class="mt-1"> Phải cần xác nhận <strong>{{ formValue.ticketTypes.length + 1 }} giao dịch</strong> trên MetaMask:</p>
+                  <p class="mt-1">Phải cần xác nhận <strong>{{ formValue.ticketTypes.length + 1 }} giao dịch</strong> trên MetaMask:</p>
                   <ul class="list-disc list-inside mt-1 space-y-1">
                     <li>1 giao dịch để tạo sự kiện</li>
                     <li>{{ formValue.ticketTypes.length }} giao dịch để tạo các loại vé</li>
                   </ul>
-                  <p class="mt-2 text-red-700 font-semibold"> * Lưu ý  : Không đóng popup MetaMask và xác nhận tất cả các giao dịch!</p>
+                  <p class="mt-2 text-red-700 font-semibold">⚠️ QUAN TRỌNG:</p>
+                  <ul class="list-disc list-inside mt-1 space-y-1 text-red-700">
+                    <li>Không đóng popup MetaMask</li>
+                    <li><strong>Xác nhận nhanh liên tục</strong> - không để quá lâu giữa các lần xác nhận</li>
+                    <li>Nếu chờ quá lâu, thời gian bán vé có thể hết hạn → giao dịch thất bại</li>
+                  </ul>
                 </div>
               </div>
             </div>
@@ -242,7 +249,7 @@
             <div class="flex gap-4">
               <button
                 type="submit"
-                :disabled="loading || (userStore.user && userStore.user.role === 'user')"
+                :disabled="loading || !userStore.user || (userStore.user.role !== 'organizer' && userStore.user.role !== 'admin')"
                 class="flex-1 px-6 py-3 bg-indigo-600 hover:bg-indigo-700 disabled:bg-gray-400 disabled:cursor-not-allowed text-white font-bold rounded-lg transition-colors flex items-center justify-center gap-2"
               >
                 <div v-if="loading" class="animate-spin rounded-full h-5 w-5 border-b-2 border-white"></div>
@@ -315,9 +322,14 @@ const handleSubmit = async () => {
     return
   }
 
-  // Check user role
-  if (userStore.user && userStore.user.role === 'user') {
-    window.$message?.error('Bạn không có quyền tạo sự kiện. Vui lòng liên hệ admin để nâng cấp role.')
+  // Check user role - only organizer and admin can create events
+  if (!userStore.user) {
+    window.$message?.error('Vui lòng đăng nhập trước')
+    return
+  }
+  
+  if (userStore.user.role !== 'organizer' && userStore.user.role !== 'admin') {
+    window.$message?.error('Chỉ Organizer và Admin mới có quyền tạo sự kiện. Role hiện tại: ' + userStore.user.role)
     return
   }
 
@@ -330,10 +342,24 @@ const handleSubmit = async () => {
   // Validate times
   const now = new Date()
   
+  console.log('=== FORM VALUES DEBUG ===')
+  console.log('Raw formValue:', JSON.stringify(formValue.value, null, 2))
+  console.log('startTime raw:', formValue.value.startTime, typeof formValue.value.startTime)
+  console.log('endTime raw:', formValue.value.endTime, typeof formValue.value.endTime)
+  
   // Parse datetime-local input correctly (it's in local timezone)
   // Need to treat the input as local time, not UTC
   const startTime = new Date(formValue.value.startTime)
   const endTime = new Date(formValue.value.endTime)
+  
+  console.log('Parsed startTime:', startTime, 'isValid:', !isNaN(startTime.getTime()))
+  console.log('Parsed endTime:', endTime, 'isValid:', !isNaN(endTime.getTime()))
+
+  // Validate parsed dates
+  if (isNaN(startTime.getTime()) || isNaN(endTime.getTime())) {
+    window.$message?.error('Thời gian không hợp lệ. Vui lòng chọn lại thời gian.')
+    return
+  }
 
   if (startTime <= now) {
     window.$message?.error('Thời gian bắt đầu phải là tương lai')
@@ -345,10 +371,19 @@ const handleSubmit = async () => {
     return
   }
 
-  // Check if start time is at least 2 hours in the future (for sale time)
-  const minFutureTime = new Date(now.getTime() + 2 * 60 * 60 * 1000) // 2 hours from now
+  // Check if start time is at least 2 hours in the future
+  // This ensures: sale can start now + 1 min, end 1 hour before event = at least 1 hour sale window
+  const minFutureTime = new Date(now.getTime() + 3 * 60 * 60 * 1000) // 3 hours from now (safe for multiple tickets)
   if (startTime < minFutureTime) {
-    window.$message?.error('Thời gian bắt đầu phải ít nhất 2 giờ sau thời điểm hiện tại (để có thời gian bán vé)')
+    const hoursNeeded = Math.ceil((minFutureTime - startTime) / (60 * 60 * 1000))
+    window.$message?.error(
+      `Thời gian bắt đầu sự kiện phải ít nhất 3 giờ sau thời điểm hiện tại. ` +
+      `Vui lòng chọn thời gian muộn hơn ${hoursNeeded} giờ nữa. ` +
+      `(Cần thời gian đủ để:\n` +
+      `• Mở bán vé với buffer time 2 phút\n` +
+      `• Xác nhận nhiều loại vé trên MetaMask\n` +
+      `• Vé ngừng bán 1 giờ trước sự kiện)`
+    )
     return
   }
 
@@ -384,8 +419,12 @@ const handleSubmit = async () => {
       endTimeLocal: endTime.toLocaleString('vi-VN'),
       name: formValue.value.name,
       nameLength: formValue.value.name.length,
+      nameBytes: new Blob([formValue.value.name]).size,
       descriptionLength: formValue.value.description.length,
-      walletAddress: walletStore.address
+      descriptionBytes: new Blob([formValue.value.description]).size,
+      walletAddress: walletStore.address,
+      timeDiff: `${Math.floor((startTimeStamp - nowTimestamp) / 3600)} hours ${Math.floor(((startTimeStamp - nowTimestamp) % 3600) / 60)} minutes`,
+      startInFuture: startTimeStamp > nowTimestamp ? 'YES ✓' : 'NO ❌'
     })
 
     // Validate timestamps before sending to blockchain
@@ -414,13 +453,47 @@ const handleSubmit = async () => {
       console.log('Estimated gas:', estimatedGas.toString())
     } catch (gasError) {
       console.error('Gas estimation failed:', gasError)
-      // If estimation fails, it usually means the transaction will fail
+      console.error('Estimation failed with params:', {
+        name: formValue.value.name,
+        nameLength: formValue.value.name.length,
+        nameBytes: new Blob([formValue.value.name]).size,
+        description: formValue.value.description.substring(0, 50) + '...',
+        descriptionLength: formValue.value.description.length,
+        descriptionBytes: new Blob([formValue.value.description]).size,
+        startTimeStamp,
+        endTimeStamp,
+        nowTimestamp: Math.floor(Date.now() / 1000),
+        startInFuture: startTimeStamp > Math.floor(Date.now() / 1000),
+        timeDiff: startTimeStamp - Math.floor(Date.now() / 1000)
+      })
+      
+      // Try to parse the actual error from smart contract
       if (gasError.message?.includes('Start time must be in future')) {
-        throw new Error('Thời gian bắt đầu phải là tương lai. Vui lòng chọn thời gian ít nhất 2 giờ sau.')
+        throw new Error(
+          `❌ Smart Contract từ chối: "Start time must be in future"\n\n` +
+          `Thời gian hiện tại: ${new Date().toLocaleString('vi-VN')}\n` +
+          `Thời gian bắt đầu: ${startTime.toLocaleString('vi-VN')}\n` +
+          `Block timestamp hiện tại: ${Math.floor(Date.now() / 1000)}\n` +
+          `Start timestamp: ${startTimeStamp}\n` +
+          `Chênh lệch: ${startTimeStamp - Math.floor(Date.now() / 1000)} giây\n\n` +
+          `Vui lòng chọn thời gian xa hơn (ít nhất 3 giờ).`
+        )
       } else if (gasError.message?.includes('End time must be after start time')) {
         throw new Error('Thời gian kết thúc phải sau thời gian bắt đầu')
       } else if (gasError.message?.includes('Name cannot be empty')) {
         throw new Error('Tên sự kiện không được để trống')
+      } else if (gasError.data) {
+        // Try to decode revert reason
+        console.error('Revert data:', gasError.data)
+        throw new Error(
+          `Smart Contract từ chối tạo sự kiện!\n\n` +
+          `Có thể do:\n` +
+          `• Thời gian không hợp lệ (cần >= 3 giờ sau)\n` +
+          `• Tên/mô tả chứa ký tự đặc biệt không hợp lệ\n` +
+          `• Ví không có quyền (cần ORGANIZER role)\n\n` +
+          `Chi tiết lỗi: ${gasError.message}\n` +
+          `Revert data: ${gasError.data}`
+        )
       }
       throw new Error('Giao dịch sẽ thất bại: ' + (gasError.shortMessage || gasError.message))
     }
@@ -429,16 +502,74 @@ const handleSubmit = async () => {
     const gasLimit = estimatedGas * 150n / 100n
     console.log('Using gas limit:', gasLimit.toString(), '(estimated:', estimatedGas.toString(), ')')
 
+    // Check wallet balance before sending transaction
+    const balance = await provider.getBalance(walletStore.address)
+    const balanceInMatic = ethers.formatEther(balance)
+    console.log('Wallet balance:', balanceInMatic, 'MATIC')
+    
+    if (balance < gasLimit * 50000000000n) { // Rough estimate: gasLimit * 50 Gwei
+      throw new Error(
+        `⚠️ Không đủ MATIC để trả gas fee!\n\n` +
+        `Số dư hiện tại: ${balanceInMatic} MATIC\n` +
+        `Gas cần thiết: ~${ethers.formatEther(gasLimit * 50000000000n)} MATIC\n\n` +
+        `Vui lòng nạp thêm MATIC từ faucet: https://faucet.polygon.technology/`
+      )
+    }
+
     // Create event transaction with estimated gas + buffer
-    const createEventTx = await contract.createEvent(
-      formValue.value.name,
-      formValue.value.description,
-      startTimeStamp,
-      endTimeStamp,
-      {
-        gasLimit: gasLimit
+    console.log('Sending createEvent transaction...')
+    let createEventTx
+    try {
+      createEventTx = await contract.createEvent(
+        formValue.value.name,
+        formValue.value.description,
+        startTimeStamp,
+        endTimeStamp,
+        {
+          gasLimit: gasLimit
+        }
+      )
+      console.log('Transaction sent, hash:', createEventTx.hash)
+    } catch (txError) {
+      console.error('Transaction failed to send:', txError)
+      
+      // Parse MetaMask/RPC errors
+      if (txError.code === 'ACTION_REJECTED' || txError.code === 4001) {
+        throw new Error('❌ Bạn đã từ chối giao dịch trên MetaMask')
+      } else if (txError.message?.includes('insufficient funds')) {
+        throw new Error(
+          `❌ Không đủ MATIC!\n\n` +
+          `Số dư: ${balanceInMatic} MATIC\n` +
+          `Vui lòng nạp thêm từ faucet.`
+        )
+      } else if (txError.message?.includes('nonce')) {
+        throw new Error(
+          `❌ Lỗi Nonce (transaction ordering)!\n\n` +
+          `Vui lòng:\n` +
+          `1. Mở MetaMask\n` +
+          `2. Settings → Advanced → Clear activity tab data\n` +
+          `3. Thử lại`
+        )
+      } else if (txError.data) {
+        // Try to decode revert reason from error data
+        try {
+          const decodedError = contract.interface.parseError(txError.data)
+          throw new Error(`Smart Contract revert: ${decodedError?.name || 'Unknown'}\n${txError.message}`)
+        } catch (e) {
+          console.error('Could not decode error:', e)
+        }
       }
-    )
+      
+      throw new Error(
+        `❌ Giao dịch thất bại!\n\n` +
+        `Lỗi: ${txError.shortMessage || txError.message}\n\n` +
+        `Có thể do:\n` +
+        `• Không đủ MATIC (cần ~0.01 MATIC)\n` +
+        `• Thời gian không hợp lệ\n` +
+        `• Network congestion\n\n` +
+        `Vui lòng kiểm tra console để biết chi tiết.`
+      )
+    }
 
     window.$message?.info('Đang chờ xác nhận giao dịch...')
     const receipt = await createEventTx.wait()
@@ -466,33 +597,83 @@ const handleSubmit = async () => {
     const totalTicketTypes = formValue.value.ticketTypes.length
     window.$message?.info(` Đang tạo ${totalTicketTypes} loại vé (mỗi loại cần 1 lần xác nhận MetaMask)...`)
     
-    // Sale ends 1 hour before event starts
+    // Sale ends 1 hour before event starts (this is fixed for all tickets)
     const saleEndTime = startTimeStamp - 3600
     
-    // Validate sale time is reasonable (event must be at least 2 hours away)
+    // Initial validation - ensure event is far enough in future
+    // Need enough time for: buffer (120s) + user confirmations + 1 hour before event
     const nowForCheck = Math.floor(Date.now() / 1000)
-    if (saleEndTime <= nowForCheck + 60) {
-      throw new Error('Thời gian bắt đầu sự kiện quá gần! Vui lòng chọn thời gian ít nhất 2 giờ sau.')
+    const initialSaleStartTime = nowForCheck + 120 // 2 minutes buffer for multiple tickets
+    
+    // Minimum safe window for multiple tickets: at least 30 minutes of sale time
+    const minSaleWindow = 30 * 60 // 30 minutes
+    const currentSaleWindow = saleEndTime - initialSaleStartTime
+    
+    if (currentSaleWindow < minSaleWindow) {
+      throw new Error(
+        `⚠️ Thời gian sự kiện quá gần!\n\n` +
+        `Cần ít nhất 30 phút cửa sổ bán vé để xử lý nhiều loại vé.\n` +
+        `Hiện tại: ${Math.floor(currentSaleWindow / 60)} phút\n` +
+        `Yêu cầu: 30 phút\n\n` +
+        `✓ Vui lòng chọn thời gian sự kiện ít nhất 3 giờ sau hiện tại.`
+      )
     }
+    
+    console.log('Initial sale time check:', {
+      now: nowForCheck,
+      initialSaleStartTime,
+      saleEndTime,
+      eventStartTime: startTimeStamp,
+      saleEndISO: new Date(saleEndTime * 1000).toISOString(),
+      currentSaleWindow: `${Math.floor(currentSaleWindow / 60)} minutes`,
+      saleDurationEstimate: `${(currentSaleWindow / 3600).toFixed(2)} hours`
+    })
 
     for (let i = 0; i < formValue.value.ticketTypes.length; i++) {
       const ticket = formValue.value.ticketTypes[i]
       const currentStep = i + 2 // +1 for event creation, +1 for current index
       
-      // Recalculate sale start time for EACH ticket to ensure it's always in future
-      const currentSaleStartTime = Math.floor(Date.now() / 1000) + 60 // Always 1 minute in future
-      const now = Math.floor(Date.now() / 1000)
+      // IMPORTANT: Recalculate saleStartTime for EACH ticket to ensure it's always in future
+      // This accounts for time spent waiting for MetaMask confirmations
+      // Use 2 minutes (120s) buffer to ensure transaction has time to be mined
+      const currentSaleStartTime = Math.floor(Date.now() / 1000) + 120
+      
+      // CRITICAL: Validate this ticket's sale time is still valid
+      // If user is too slow, we need to abort early before wasting gas
+      const timeRemaining = saleEndTime - currentSaleStartTime
+      
+      if (timeRemaining <= 0) {
+        throw new Error(
+          `⚠️ TIMEOUT: Thời gian bán vé đã hết!\n\n` +
+          `Bạn đã chờ quá lâu giữa các lần xác nhận MetaMask.\n` +
+          `Thời gian kết thúc bán vé: ${new Date(saleEndTime * 1000).toLocaleString('vi-VN')}\n` +
+          `Thời gian hiện tại + 2 phút: ${new Date(currentSaleStartTime * 1000).toLocaleString('vi-VN')}\n\n` +
+          `✓ Giải pháp: Chọn thời gian sự kiện xa hơn (ít nhất ${Math.ceil((120 - timeRemaining + 3600) / 3600)} giờ nữa) và thử lại.`
+        )
+      }
+      
+      if (timeRemaining < 300) { // Less than 5 minutes remaining
+        window.$message?.warning(
+          `⚠️ Cảnh báo: Chỉ còn ${Math.floor(timeRemaining / 60)} phút cho thời gian bán vé!\n` +
+          `Vui lòng xác nhận MetaMask NGAY để tránh thất bại.`
+        )
+      }
       
       console.log(`Creating ticket type ${i + 1}/${totalTicketTypes}:`, {
+        ticketIndex: i,
         eventId,
         name: ticket.name,
         price: ticket.price,
         maxSupply: ticket.maxSupply,
+        currentTime: Math.floor(Date.now() / 1000),
         saleStartTime: currentSaleStartTime,
         saleEndTime,
-        currentTime: now,
-        startInFuture: (currentSaleStartTime - now) + 's',
-        endAfterStart: (saleEndTime - currentSaleStartTime) + 's'
+        eventStartTime: startTimeStamp,
+        saleStartISO: new Date(currentSaleStartTime * 1000).toISOString(),
+        saleEndISO: new Date(saleEndTime * 1000).toISOString(),
+        timeUntilSaleStart: `${currentSaleStartTime - Math.floor(Date.now() / 1000)}s`,
+        saleDuration: `${((saleEndTime - currentSaleStartTime) / 3600).toFixed(2)} hours`,
+        timeRemaining: `${Math.floor(timeRemaining / 60)} minutes ${timeRemaining % 60} seconds`
       })
       
       window.$message?.info(` [${currentStep}/${totalConfirmations}] Đang tạo "${ticket.name}" - Vui lòng xác nhận trên MetaMask...`)
@@ -510,9 +691,25 @@ const handleSubmit = async () => {
         )
         console.log(`Estimated gas for ticket ${i + 1}:`, ticketGas.toString())
       } catch (gasError) {
-        console.error('Ticket gas estimation failed:', gasError)
+        console.error(`Ticket ${i + 1} gas estimation failed:`, gasError)
+        console.error('Failed parameters:', {
+          eventId,
+          name: ticket.name,
+          price: ethers.parseEther(ticket.price.toString()).toString(),
+          maxSupply: ticket.maxSupply,
+          saleStartTime: currentSaleStartTime,
+          saleEndTime,
+          timeDiff: saleEndTime - currentSaleStartTime
+        })
+        
         if (gasError.message?.includes('Invalid sale time range')) {
-          throw new Error('Thời gian bán vé không hợp lệ. Vui lòng đảm bảo sự kiện bắt đầu ít nhất 2 giờ sau.')
+          throw new Error(
+            `❌ Thời gian bán vé không hợp lệ cho "${ticket.name}"!\n\n` +
+            `Smart contract từ chối vì: saleEndTime (${saleEndTime}) <= saleStartTime (${currentSaleStartTime})\n` +
+            `Vui lòng chọn thời gian sự kiện xa hơn và thử lại.`
+          )
+        } else if (gasError.message?.includes('Sale must end before event')) {
+          throw new Error(`Lỗi: Thời gian kết thúc bán vé (${new Date(saleEndTime * 1000).toLocaleString()}) phải trước khi sự kiện bắt đầu (${new Date(startTimeStamp * 1000).toLocaleString()}).`)
         }
         throw new Error(`Không thể tạo vé "${ticket.name}": ` + (gasError.shortMessage || gasError.message))
       }
@@ -532,7 +729,8 @@ const handleSubmit = async () => {
       )
       
       window.$message?.info(` Đang chờ xác nhận giao dịch "${ticket.name}"...`)
-      await createTicketTx.wait()
+      const ticketReceipt = await createTicketTx.wait()
+      console.log(`Ticket ${i + 1} created successfully. Block:`, ticketReceipt.blockNumber)
       window.$message?.success(` [${currentStep}/${totalConfirmations}] Đã tạo loại vé: ${ticket.name}`)
     }
 
@@ -593,6 +791,34 @@ const handleSubmit = async () => {
 
       window.$message?.success('✅ Sự kiện đã được tạo thành công!')
       
+      // Step 4: Upload banner image to IPFS if provided
+      if (formValue.value.imageUrl && formValue.value.imageUrl.trim()) {
+        try {
+          window.$message?.info('📤 Đang tải ảnh banner lên IPFS...')
+          console.log('Uploading banner to IPFS:', formValue.value.imageUrl)
+          console.log('API endpoint:', `/events/${eventId}/upload-banner`)
+          console.log('Auth token:', localStorage.getItem('authToken') ? 'Exists' : 'Missing')
+          
+          const uploadResponse = await api.post(`/events/${eventId}/upload-banner`, {
+            imageUrl: formValue.value.imageUrl
+          })
+          
+          if (uploadResponse.data.success) {
+            window.$message?.success('✅ Ảnh banner đã được tải lên IPFS/Pinata!')
+            console.log('Banner IPFS hash:', uploadResponse.data.data.ipfsHash)
+            console.log('Banner IPFS URL:', uploadResponse.data.data.ipfsUrl)
+          }
+        } catch (uploadError) {
+          console.error('Banner upload error:', uploadError)
+          console.error('Error details:', {
+            message: uploadError.message,
+            response: uploadError.response?.data,
+            status: uploadError.response?.status
+          })
+          window.$message?.warning('⚠️ Tải ảnh lên IPFS thất bại. Bạn có thể upload lại sau.')
+        }
+      }
+      
       console.log('Reloading events from store...')
       // Reload events list
       await eventsStore.fetchEvents()
@@ -634,9 +860,18 @@ const handleSubmit = async () => {
     } else if (error.message?.includes('End time must be after start time')) {
       errorMessage = 'Thời gian kết thúc phải sau thời gian bắt đầu'
     } else if (error.message?.includes('Invalid sale time range')) {
-      errorMessage = 'Thời gian bắt đầu sự kiện quá gần! Vui lòng chọn thời gian ít nhất 2 giờ sau để có thời gian mở bán vé.'
+      errorMessage = '⚠️ Thời gian bán vé không hợp lệ!\n\n' +
+                    'Smart contract yêu cầu:\n' +
+                    '• Thời gian kết thúc bán vé > thời gian bắt đầu bán vé\n' +
+                    '• Vé ngừng bán 1 giờ trước khi sự kiện bắt đầu\n\n' +
+                    '⏰ Vui lòng chọn thời gian bắt đầu sự kiện ít nhất 2 giờ sau hiện tại!'
+    } else if (error.message?.includes('Sale must end before event')) {
+      errorMessage = 'Lỗi cấu hình: Thời gian kết thúc bán vé phải trước khi sự kiện bắt đầu. Vui lòng chọn thời gian sự kiện xa hơn.'
     } else if (error.message?.includes('insufficient funds')) {
       errorMessage = ' Không đủ MATIC để trả gas fee. Vui lòng nạp thêm MATIC từ faucet.'
+    } else if (error.message?.includes('Thời gian bắt đầu sự kiện quá gần')) {
+      // Custom error from our validation
+      errorMessage = error.message
     } else if (error.message?.includes('Internal JSON-RPC error')) {
       // More detailed error for RPC errors
       console.error('RPC Error Details:', error)
@@ -644,9 +879,9 @@ const handleSubmit = async () => {
                     '• Gas estimation failed - giao dịch sẽ thất bại\n' +
                     '• Có thể do: thời gian không hợp lệ, thiếu quyền, hoặc contract lỗi\n' +
                     '\nKiểm tra:\n' +
-                    '1. Thời gian bắt đầu ≥ 2 giờ sau hiện tại\n' +
-                    '2. Thời gian kết thúc > thời gian bắt đầu\n' +
-                    '3. Ví có đủ MATIC (≥0.05 MATIC)\n' +
+                    '1. Thời gian bắt đầu sự kiện ≥ 2 giờ sau hiện tại ✓\n' +
+                    '2. Thời gian kết thúc > thời gian bắt đầu ✓\n' +
+                    '3. Ví có đủ MATIC (≥0.05 MATIC) ✓\n' +
                     '4. Contract address đúng: ' + CONTRACT_ADDRESS.substring(0, 10) + '...'
     } else if (error.code === 'UNKNOWN_ERROR') {
       errorMessage = ' Lỗi không xác định từ blockchain:\n' +
@@ -667,20 +902,28 @@ const handleSubmit = async () => {
   }
 }
 
-onMounted(() => {
+onMounted(async () => {
   // Fetch user info if not loaded
   if (!userStore.user) {
-    userStore.fetchUser()
+    await userStore.fetchUser()
   }
+  
+  // Debug: Log user info
+  console.log('=== USER INFO DEBUG ===')
+  console.log('User:', userStore.user)
+  console.log('User role:', userStore.user?.role)
+  console.log('Is authenticated:', userStore.isAuthenticated)
+  console.log('Wallet connected:', walletStore.isConnected)
+  console.log('Wallet address:', walletStore.address)
 
   // Set default times to future dates
   const now = new Date()
   
-  // Default start time: 2 hours from now (minimum required for sale time)
-  const defaultStartTime = new Date(now.getTime() + 2 * 60 * 60 * 1000)
+  // Default start time: 3 hours from now (minimum required for safe multi-ticket creation)
+  const defaultStartTime = new Date(now.getTime() + 3 * 60 * 60 * 1000)
   
-  // Default end time: 5 hours from now
-  const defaultEndTime = new Date(now.getTime() + 5 * 60 * 60 * 1000)
+  // Default end time: 6 hours from now
+  const defaultEndTime = new Date(now.getTime() + 6 * 60 * 60 * 1000)
   
   // Format to datetime-local input format (YYYY-MM-DDTHH:MM)
   const formatDateTime = (date) => {

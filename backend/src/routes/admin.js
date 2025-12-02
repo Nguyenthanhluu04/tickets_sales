@@ -23,4 +23,9 @@ router.get('/users', paginationValidation, validate, adminController.getAllUsers
 // @access  Private/Admin
 router.get('/transactions', paginationValidation, validate, adminController.getAllTransactions);
 
+// @route   POST /api/admin/events/:eventId/upload-banner
+// @desc    Upload event banner to IPFS
+// @access  Private/Admin
+router.post('/events/:eventId/upload-banner', adminController.uploadEventBanner);
+
 module.exports = router;

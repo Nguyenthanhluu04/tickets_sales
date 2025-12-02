@@ -5,6 +5,7 @@ const Transaction = require('../models/Transaction');
 const { apiResponse } = require('../utils/helpers');
 const { logger } = require('../utils/logger');
 const { ethers } = require('ethers');
+const ipfsService = require('../services/ipfsService');
 
 /**
  * @desc Get admin dashboard data
@@ -116,5 +117,51 @@ exports.getAllTransactions = async (req, res) => {
   } catch (error) {
     logger.error('Get all transactions error:', error);
     res.status(500).json(apiResponse(false, 'Server error', null, error.message));
+  }
+};
+
+/**
+ * @desc Upload event banner to IPFS
+ * @route POST /api/admin/events/:eventId/upload-banner
+ */
+exports.uploadEventBanner = async (req, res) => {
+  try {
+    const { eventId } = req.params;
+    const { imageUrl } = req.body;
+
+    if (!imageUrl) {
+      return res.status(400).json(apiResponse(false, 'Image URL is required'));
+    }
+
+    // Find event
+    const event = await Event.findOne({ eventId });
+    if (!event) {
+      return res.status(404).json(apiResponse(false, 'Event not found'));
+    }
+
+    // Initialize IPFS service if not already
+    if (!ipfsService.pinata) {
+      await ipfsService.initialize();
+    }
+
+    // Upload to IPFS
+    const fileName = `event-${eventId}-banner.jpg`;
+    const result = await ipfsService.uploadImageFromURL(imageUrl, fileName);
+
+    // Update event with IPFS hash
+    event.bannerImageIPFS = result.ipfsHash;
+    event.bannerImage = result.url;
+    await event.save();
+
+    logger.info(`Event ${eventId} banner uploaded to IPFS: ${result.ipfsHash}`);
+
+    res.json(apiResponse(true, 'Banner uploaded to IPFS successfully', {
+      ipfsHash: result.ipfsHash,
+      ipfsUrl: result.url,
+      event
+    }));
+  } catch (error) {
+    logger.error('Upload event banner error:', error);
+    res.status(500).json(apiResponse(false, 'Failed to upload banner', null, error.message));
   }
 };

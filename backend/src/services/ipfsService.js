@@ -43,6 +43,89 @@ class IPFSService {
   }
 
   /**
+   * Upload image from URL to IPFS
+   */
+  async uploadImageFromURL(imageUrl, fileName) {
+    try {
+      logger.info(`Starting upload from URL: ${imageUrl}`);
+      
+      const axios = require('axios');
+      const { Readable } = require('stream');
+      
+      const response = await axios.get(imageUrl, { 
+        responseType: 'arraybuffer',
+        timeout: 30000, // 30 seconds timeout
+        maxContentLength: 10 * 1024 * 1024, // 10MB max
+      });
+      
+      logger.info(`Image downloaded, size: ${response.data.byteLength} bytes`);
+      
+      // Convert buffer to readable stream
+      const buffer = Buffer.from(response.data);
+      const readableStream = Readable.from(buffer);
+      
+      const options = {
+        pinataMetadata: {
+          name: fileName,
+          keyvalues: {
+            uploadedAt: new Date().toISOString(),
+            source: 'event-banner'
+          }
+        },
+        pinataOptions: {
+          cidVersion: 0,
+        },
+      };
+
+      logger.info('Uploading to Pinata...');
+      const result = await this.pinata.pinFileToIPFS(readableStream, options);
+      
+      logger.info(`✅ Image uploaded to IPFS successfully! Hash: ${result.IpfsHash}`);
+      
+      return {
+        ipfsHash: result.IpfsHash,
+        url: `https://gateway.pinata.cloud/ipfs/${result.IpfsHash}`,
+      };
+    } catch (error) {
+      logger.error('❌ Error uploading image from URL to IPFS:', error.message);
+      logger.error('Error details:', {
+        message: error.message,
+        code: error.code,
+        response: error.response?.data
+      });
+      throw error;
+    }
+  }
+
+  /**
+   * Upload image from buffer to IPFS
+   */
+  async uploadImageFromBuffer(buffer, fileName) {
+    try {
+      const options = {
+        pinataMetadata: {
+          name: fileName,
+        },
+        pinataOptions: {
+          cidVersion: 0,
+        },
+      };
+
+      const result = await this.pinata.pinFileToIPFS(buffer, options);
+      
+      logger.info(`Image uploaded to IPFS from buffer: ${result.IpfsHash}`);
+      
+      return {
+        ipfsHash: result.IpfsHash,
+        url: `https://gateway.pinata.cloud/ipfs/${result.IpfsHash}`,
+      };
+    } catch (error) {
+      logger.error('Error uploading image from buffer to IPFS:', error);
+      throw error;
+    }
+  }
+
+  /**
    * Upload JSON metadata to IPFS
    */
   async uploadMetadata(metadata, name) {

@@ -3,6 +3,7 @@ const TicketType = require('../models/TicketType');
 const { apiResponse, paginate } = require('../utils/helpers');
 const { logger } = require('../utils/logger');
 const blockchainService = require('../services/blockchainService');
+const ipfsService = require('../services/ipfsService');
 
 const IPFS_GATEWAY = process.env.IPFS_GATEWAY || 'https://gateway.pinata.cloud/ipfs/';
 
@@ -195,6 +196,13 @@ exports.syncEventFromBlockchain = async (req, res) => {
       bannerImage 
     } = req.body;
 
+    // Convert Unix timestamps (seconds) to Date objects
+    // startTime and endTime from blockchain are in seconds, need to convert to milliseconds
+    const startTimeDate = new Date(startTime * 1000);
+    const endTimeDate = new Date(endTime * 1000);
+
+    logger.info(`Syncing event ${eventId}: startTime=${startTime} (${startTimeDate.toISOString()}), endTime=${endTime} (${endTimeDate.toISOString()})`);
+
     // Check if event already exists
     let event = await Event.findOne({ eventId });
 
@@ -202,8 +210,8 @@ exports.syncEventFromBlockchain = async (req, res) => {
       // Update existing event
       event.name = name;
       event.description = description;
-      event.startTime = startTime;
-      event.endTime = endTime;
+      event.startTime = startTimeDate;
+      event.endTime = endTimeDate;
       event.organizer = organizer.toLowerCase();
       event.isActive = isActive;
       event.totalTicketsSold = totalTicketsSold || 0;
@@ -222,8 +230,8 @@ exports.syncEventFromBlockchain = async (req, res) => {
       eventId,
       name,
       description,
-      startTime,
-      endTime,
+      startTime: startTimeDate,
+      endTime: endTimeDate,
       organizer: organizer.toLowerCase(),
       isActive,
       totalTicketsSold: totalTicketsSold || 0,
@@ -265,6 +273,12 @@ exports.syncTicketTypeFromBlockchain = async (req, res) => {
     const actualStartSaleTime = saleStartTime || startSaleTime;
     const actualEndSaleTime = saleEndTime || endSaleTime;
 
+    // Convert Unix timestamps (seconds) to Date objects
+    const startSaleTimeDate = new Date(actualStartSaleTime * 1000);
+    const endSaleTimeDate = new Date(actualEndSaleTime * 1000);
+
+    logger.info(`Syncing ticket type ${tokenId}: startSaleTime=${actualStartSaleTime} (${startSaleTimeDate.toISOString()}), endSaleTime=${actualEndSaleTime} (${endSaleTimeDate.toISOString()})`);
+
     // Check if event exists
     const event = await Event.findOne({ eventId });
     if (!event) {
@@ -280,8 +294,8 @@ exports.syncTicketTypeFromBlockchain = async (req, res) => {
       ticketType.price = price;
       ticketType.maxSupply = maxSupply;
       ticketType.currentSupply = currentSupply || 0;
-      ticketType.saleStartTime = actualStartSaleTime;
-      ticketType.saleEndTime = actualEndSaleTime;
+      ticketType.startSaleTime = startSaleTimeDate;
+      ticketType.endSaleTime = endSaleTimeDate;
       ticketType.isActive = isActive;
       await ticketType.save();
 
@@ -297,8 +311,8 @@ exports.syncTicketTypeFromBlockchain = async (req, res) => {
       price,
       maxSupply,
       currentSupply: currentSupply || 0,
-      saleStartTime: actualStartSaleTime,
-      saleEndTime: actualEndSaleTime,
+      startSaleTime: startSaleTimeDate,
+      endSaleTime: endSaleTimeDate,
       isActive,
     });
 
@@ -307,5 +321,98 @@ exports.syncTicketTypeFromBlockchain = async (req, res) => {
   } catch (error) {
     logger.error('Sync ticket type error:', error);
     res.status(500).json(apiResponse(false, 'Server error', null, error.message));
+  }
+};
+
+/**
+ * @desc Toggle event active status
+ * @route PATCH /api/events/:id/toggle-status
+ */
+exports.toggleEventStatus = async (req, res) => {
+  try {
+    const { id: eventId } = req.params;
+
+    // Find event
+    const event = await Event.findOne({ eventId });
+    if (!event) {
+      return res.status(404).json(apiResponse(false, 'Event not found'));
+    }
+
+    // Check if user is organizer or admin
+    if (req.user.role !== 'admin' && event.organizer.toLowerCase() !== req.user.walletAddress.toLowerCase()) {
+      return res.status(403).json(apiResponse(false, 'Not authorized to toggle this event'));
+    }
+
+    // Toggle status
+    event.isActive = !event.isActive;
+    await event.save();
+
+    logger.info(`Event ${eventId} status toggled to ${event.isActive} by ${req.user.walletAddress}`);
+
+    res.json(apiResponse(true, `Event ${event.isActive ? 'activated' : 'deactivated'} successfully`, event));
+  } catch (error) {
+    logger.error('Toggle event status error:', error);
+    res.status(500).json(apiResponse(false, 'Failed to toggle event status', null, error.message));
+  }
+};
+
+/**
+ * @desc Upload event banner to IPFS
+ * @route POST /api/events/:id/upload-banner
+ */
+exports.uploadEventBanner = async (req, res) => {
+  try {
+    const { id: eventId } = req.params;
+    const { imageUrl } = req.body;
+
+    logger.info(`Upload banner request for event ${eventId}: ${imageUrl}`);
+
+    if (!imageUrl) {
+      return res.status(400).json(apiResponse(false, 'Image URL is required'));
+    }
+
+    // Find event
+    const event = await Event.findOne({ eventId });
+    if (!event) {
+      logger.warn(`Event ${eventId} not found`);
+      return res.status(404).json(apiResponse(false, 'Event not found'));
+    }
+
+    // Check if user is organizer or admin
+    if (req.user.role !== 'admin' && event.organizer.toLowerCase() !== req.user.walletAddress.toLowerCase()) {
+      logger.warn(`Unauthorized upload attempt by ${req.user.walletAddress} for event ${eventId}`);
+      return res.status(403).json(apiResponse(false, 'Not authorized to upload banner for this event'));
+    }
+
+    // Initialize IPFS service if not already
+    if (!ipfsService.pinata) {
+      logger.info('Initializing IPFS service...');
+      await ipfsService.initialize();
+    }
+
+    logger.info(`Uploading image to Pinata from URL: ${imageUrl}`);
+
+    // Upload to IPFS/Pinata
+    const fileName = `event-${eventId}-banner.jpg`;
+    const result = await ipfsService.uploadImageFromURL(imageUrl, fileName);
+
+    logger.info(`Image uploaded to Pinata. IPFS Hash: ${result.ipfsHash}`);
+
+    // Update event with IPFS hash
+    event.bannerImageIPFS = result.ipfsHash;
+    event.bannerImage = result.url;
+    await event.save();
+
+    logger.info(`Event ${eventId} banner uploaded to IPFS: ${result.ipfsHash}`);
+
+    res.json(apiResponse(true, 'Banner uploaded to IPFS successfully', {
+      ipfsHash: result.ipfsHash,
+      ipfsUrl: result.url,
+      event
+    }));
+  } catch (error) {
+    logger.error('Upload event banner error:', error);
+    logger.error('Error stack:', error.stack);
+    res.status(500).json(apiResponse(false, 'Failed to upload banner', null, error.message));
   }
 };

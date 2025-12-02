@@ -74,7 +74,7 @@
                   <td class="py-4 px-6">
                     <div class="flex items-center gap-3">
                       <img
-                        :src="event.imageUrl || 'https://via.placeholder.com/150'"
+                        :src="event.imageUrl || 'https://placehold.co/600x400?text=No+Image'"
                         :alt="event.name"
                         class="w-12 h-12 rounded-lg object-cover"
                         @error="handleImageError"
@@ -178,6 +178,7 @@
 import { ref, computed, onMounted } from 'vue'
 import { useRouter } from 'vue-router'
 import { useEventsStore } from '@/stores/events'
+import { api } from '@/stores/user'
 import AppLayout from '@/components/AppLayout.vue'
 import { format } from 'date-fns'
 
@@ -249,12 +250,34 @@ const formatDate = (timestamp) => {
 }
 
 const handleImageError = (e) => {
-  e.target.src = 'https://via.placeholder.com/150'
+  e.target.src = 'https://placehold.co/600x400?text=No+Image'
 }
 
-const toggleEventStatus = (event) => {
-  window.$message?.info('Chức năng bật/tắt sự kiện đang được phát triển')
-  // TODO: Implement toggle event status
+const toggleEventStatus = async (event) => {
+  try {
+    const action = event.isActive ? 'tắt' : 'bật'
+    const confirmed = confirm(`Bạn có chắc muốn ${action} sự kiện "${event.name}"?`)
+    
+    if (!confirmed) return
+
+    window.$message?.info(`Đang ${action} sự kiện...`)
+    
+    const response = await api.patch(`/events/${event.eventId}/toggle-status`)
+    
+    if (response.data.success) {
+      window.$message?.success(`✅ Đã ${action} sự kiện thành công!`)
+      
+      // Update local state
+      event.isActive = !event.isActive
+      
+      // Reload events
+      await eventsStore.fetchEvents()
+      events.value = eventsStore.events
+    }
+  } catch (error) {
+    console.error('Toggle event status error:', error)
+    window.$message?.error('Không thể thay đổi trạng thái sự kiện: ' + (error.response?.data?.message || error.message))
+  }
 }
 
 onMounted(async () => {

@@ -41,4 +41,14 @@ router.post('/sync', eventController.syncEventFromBlockchain);
 // @access  Public (for now)
 router.post('/:id/ticket-types/sync', eventController.syncTicketTypeFromBlockchain);
 
+// @route   PATCH /api/events/:id/toggle-status
+// @desc    Toggle event active status
+// @access  Private (Organizer/Admin)
+router.patch('/:id/toggle-status', protect, authorize('organizer', 'admin'), eventController.toggleEventStatus);
+
+// @route   POST /api/events/:id/upload-banner
+// @desc    Upload event banner to IPFS
+// @access  Private (Organizer/Admin)
+router.post('/:id/upload-banner', protect, eventController.uploadEventBanner);
+
 module.exports = router;
